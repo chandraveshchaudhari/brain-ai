@@ -1,0 +1,2 @@
+In this directory, you can place some extra files that you might need. It could be pictures, datasets, etc.
+if you don't want additional data, feel free to delete this directory.
