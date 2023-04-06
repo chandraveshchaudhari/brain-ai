@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://github.com/chandraveshchaudhari/personal-information/blob/bf3d602dbbf0b7d0bbe6461351c163144b617d24/logos/my%20github%20logo%20template-python%20project%20template%20small.png" width="640" height="320">
+  <img src="https://raw.githubusercontent.com/chandraveshchaudhari/personal-information/bf3d602dbbf0b7d0bbe6461351c163144b617d24/logos/my%20github%20logo%20template-python%20project%20template%20small.png" width="640" height="320">
 </div>
 
 # Title of the python project
@@ -15,8 +15,7 @@
 what it does. why it was made. what is future vision. 
 
 ### Authors
-<img align="left" width="231.95" height="75" src="https://github.com/chandraveshchaudhari/personal-information/blob/1afa9ad052ab9666e6a1a3854464a77ccab68438/images/christ.png">
-
+<img align="left" width="231.95" height="75" src="https://raw.githubusercontent.com/chandraveshchaudhari/personal-information/initial_setup/images/christ.png">
 [Chandravesh chaudhari][chandravesh linkedin], Doctoral candidate at [CHRIST (Deemed to be University), Bangalore, India][christ university website] under supervision of [Dr. Geetanjali purswani][geetanjali linkedin].
 
 <br/>
