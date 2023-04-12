@@ -7,8 +7,8 @@ from brain_ai import sample_func
 
 
 class FrontalLobe:
-    def __init__(self):
-        self.data = dict()
+    def __init__(self, data):
+        self.data = data
 
     def check_types_of_dataset(self):
         pass
