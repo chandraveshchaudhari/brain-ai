@@ -1,14 +1,15 @@
 """
-Remember to put distinct name of modules and they should not have same name functions and class inside
+Remember to put distinct name of modules, and they should not have same name functions and class inside
 Try to use absolute import and reduce cyclic imports to avoid errors
 if there are more than one modules then import like this:
 from brain_ai import sample_func
 """
+from brain_ai import utils as brain_ai_utils
 
 
 class FrontalLobe:
-    def __init__(self, data):
-        self.data = data
+    def __init__(self, *args, **kwargs):
+        self.data_loader = brain_ai_utils.DataLoader(*args, **kwargs)
 
     def check_types_of_dataset(self):
         pass
