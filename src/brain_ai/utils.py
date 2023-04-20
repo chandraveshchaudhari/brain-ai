@@ -1,14 +1,25 @@
+def specify_dataset_type():
+    pass
+
 
 class DataLoader:
     def __init__(self, common_column, *args, **kwargs):
         self.common_column = common_column
         self.args = args
         self.kwargs = kwargs
-        self.data = None
+        self.data = []
 
     def load_data(self):
-        for data in self.args:
-            self.add_datasets(data)
+        for dataset in self.args:
+            self.data.append(dataset)
+
+    def data_handler(self):
+        specify_dataset_type()  # save configurations in memory
+
+    def merge_all_datasets_using_common_column(self):
+        pass
+
+    # end of file
 
     def save_data_columns(self, dataframe):
         return dataframe.columns
