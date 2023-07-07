@@ -1,16 +1,28 @@
 import os
-import sys
 
-sys.path.append("/home/chandravesh/PhDWork/PycharmProjects/data-processing/src")
-from data_processing import file_paths, utils as data_processing_utils
+from brain_ai.utilities.data_handling import DataHandler
 
 
 class Memory:
 
-    def __init__(self, memory_path=file_paths.FilePaths().Sentiment_Analysis_Metric_directory_path):
-        self.memory_path = memory_path
-        self.configuration_json_path = os.path.join(self.memory_path, "configuration.json")
-        self.configuration = {"dataset_type": "model_name"}
+    def __init__(self, memory_directory_path=None):
+        self.configuration_path = "./configuration.json" if memory_directory_path is None else os.path.join(
+            memory_directory_path, "configuration.json")
 
-    def add_in_configuration(self, data):
-        data_processing_utils.append_to_json_file(data, self.configuration_json_path)
+        self.configuration = DataHandler(self.configuration_path).load() if memory_directory_path else {"datasets": [
+            {'Tabular_data': {'path': 'path_of_tabular_data', 'target': 'target_column_name'}
+             },
+            {'Tabular_data': {'path': 'path_of_tabular_data', 'target': 'target_column_name'}
+             },
+            {'Sentiment_data': {'path': 'path_of_tabular_data', 'target': 'target_column_name'}
+             }
+        ]}
+
+    def generate_configuration_file(self, output_configuration_file_path=None):
+        DataHandler(output_configuration_file_path).write(data=self.configuration)
+
+
+
+
+
+

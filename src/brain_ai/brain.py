@@ -1,14 +1,21 @@
-from brain_ai.utils import DataLoader
+from brain_ai.memory import Memory
 
 
 class Brain:
-    def __init__(self, common_column, *args, **kwargs):
-        self.common_column = common_column
+    def __init__(self, memory_directory_path=None, *args, **kwargs):
+        self.memory = Memory(memory_directory_path)
         self.args = args
         self.kwargs = kwargs
 
-    def load_data(self):
-        DataLoader(self.common_column, *self.args, **self.kwargs)
+    def generate_brain_configuration_file(self, output_configuration_file_path=None):
+        config_file_path = self.memory.configuration_path if output_configuration_file_path is None else output_configuration_file_path
+        self.memory.generate_configuration_file(config_file_path)
+
+
+
+
+
+
 
 
 class ModelSelector:
