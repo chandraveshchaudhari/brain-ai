@@ -5,8 +5,6 @@ if there are more than one modules then import like this:
 from brain_ai import sample_func
 """
 
-from brain_ai.brain import ModelSelector
-
 
 class FrontalLobe:
     def __init__(self):
@@ -42,3 +40,9 @@ class FrontalLobe:
     # def collecting_results_into_applicable_format(self):
     #     # get applicable format from prediction-techniques-comparison
     #     pass
+
+class ModelSelector:
+    def __init__(self, dataset):
+        self.dataset = dataset
+
+    
