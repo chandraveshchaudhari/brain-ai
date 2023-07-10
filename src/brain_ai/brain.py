@@ -1,4 +1,5 @@
 from brain_ai.memory import Memory
+from brain_ai.model_zoo.model_selector_and_trainer import ModelZoo
 
 
 class Brain:
@@ -12,24 +13,11 @@ class Brain:
         self.memory.generate_configuration_file(config_file_path)
 
     def train(self):
-        for dataset in self.memory.configuration['datasets']:
-            for data_type, data in dataset.items():
-                if data_type == 'Tabular_data':
-                    self.train_tabular_data(data)
-                elif data_type == 'Sentiment_data':
-                    self.train_sentiment_data(data)
-                elif data_type == 'Image_data':
-                    self.train_image_data(data)
-                elif data_type == 'Text_data':
-                    self.train_text_data(data)
-                elif data_type == 'Audio_data':
-                    self.train_audio_data(data)
-                elif data_type == 'Video_data':
-                    self.train_video_data(data)
-                elif data_type == 'Time_series_data':
-                    self.train_time_series_data(data)
-                else:
-                    raise ValueError(f"Invalid data type {data_type}")
+        ModelZoo(self.memory).train()
+
+
+
+
 
 
 

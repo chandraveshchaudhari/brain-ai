@@ -15,14 +15,8 @@ class Memory:
             {'Tabular_data': {'path': 'path_of_tabular_data', 'target': 'target_column_name'}
              },
             {'Sentiment_data': {'path': 'path_of_tabular_data', 'target': 'target_column_name'}
-             }
-        ]}
+             }],
+            "Underlying_models_train_test_split": 0.2, }
 
     def generate_configuration_file(self, output_configuration_file_path=None):
         DataHandler(output_configuration_file_path).write(data=self.configuration)
-
-
-
-
-
-
