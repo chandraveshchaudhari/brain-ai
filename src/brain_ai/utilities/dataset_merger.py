@@ -3,7 +3,7 @@ Takes multiple dataset and merge them based on common column.
 """
 import pandas as pd
 
-from brain_ai.exploratory_data_analysis import find_common_columns
+from brain_ai.explainability.exploratory_data_analysis import find_common_columns
 from brain_ai.utilities.data_handling import DataTypeInterchange
 
 

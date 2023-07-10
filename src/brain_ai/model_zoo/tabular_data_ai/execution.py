@@ -14,7 +14,7 @@ from data_processing import utils, file_paths
 
 
 class TabularAIExecutor:
-    def __init__(self, tabular_data, target):
+    def __init__(self, tabular_data, target, test_size=0.33):
         self.target = target
         self.tabular_data = tabular_data
         # X_train, X_test, y_train, y_test

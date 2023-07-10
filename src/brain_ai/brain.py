@@ -1,5 +1,6 @@
 from brain_ai.memory import Memory
 from brain_ai.model_zoo.model_selector_and_trainer import ModelZoo
+from brain_ai.model_zoo.tabular_data_ai.execution import TabularAIExecutor
 
 
 class Brain:
@@ -13,16 +14,10 @@ class Brain:
         self.memory.generate_configuration_file(config_file_path)
 
     def train(self):
-        ModelZoo(self.memory).train()
+        base_models_result_dataset, target = ModelZoo(self.memory).base_models_train_and_test()
+        TabularAIExecutor(base_models_result_dataset, target).execute_all_models()
 
-
-
-
-
-
-
-
-
-
-
+    def inference(self):
+        # get the saved models from the memory and use them to predict the new data.
+        pass
 

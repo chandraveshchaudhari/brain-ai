@@ -13,7 +13,7 @@ class ModelZoo:
         for dataset in self.memory.configuration['datasets']:
             for data_type, data in dataset.items():
                 if data_type == 'Tabular_data':
-                    TabularAIExecutor(data, data['target']).execute_all_models()
+                    TabularAIExecutor(data['path'], data['target'], data['test_size']).execute_all_models()
                 elif data_type == 'Text_data':
                     logging.info("using already trained")
                     # testing the already trained models

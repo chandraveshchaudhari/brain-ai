@@ -10,11 +10,9 @@ class Memory:
             memory_directory_path, "configuration.json")
 
         self.configuration = DataHandler(self.configuration_path).load() if memory_directory_path else {"datasets": [
-            {'Tabular_data': {'path': 'path_of_tabular_data', 'target': 'target_column_name', 'train_test_split': 0.2}
+            {'Tabular_data': {'path': 'path_of_tabular_data', 'target': 'target_column_name', 'test_size': 0.2}
              },
-            {'Tabular_data': {'path': 'path_of_tabular_data', 'target': 'target_column_name'}
-             },
-            {'Sentiment_data': {'path': 'path_of_tabular_data', 'target': 'target_column_name'}
+            {'Sentiment_data': {'path': 'path_of_tabular_data'}
              }],
             "Underlying_models_train_test_split": 0.2, }
 
