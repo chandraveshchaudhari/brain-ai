@@ -4,6 +4,8 @@ Try to use absolute import and reduce cyclic imports to avoid errors
 if there are more than one modules then import like this:
 from tabular_data_ai import sample_func
 """
+import logging
+
 import mlflow
 from sklearn.model_selection import train_test_split
 
@@ -14,11 +16,10 @@ from brain_ai.model_zoo.tabular_data_ai.machine_learning_algorithm import get_lo
 
 class TabularAIExecutor:
     def __init__(self, tabular_data, target, test_size=0.33):
-        self.target = target
-        self.tabular_data = tabular_data
+
         # X_train, X_test, y_train, y_test
-        self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(self.tabular_data, self.target,
-                                                                                test_size, random_state=42)
+        self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(tabular_data, target,
+                                                                                test_size=test_size, random_state=42)
         self.metric = dict()
         self.model_dict = {'LogisticRegression': get_logistic_regression, 'SVC': get_svm_svc,
                            'KNeighborsClassifier': get_k_neighbors_classifier,
@@ -38,6 +39,7 @@ class TabularAIExecutor:
         # TODO: use save_model argument to put model path.
         # TODO: don't train model if it is already trained and saved.
         for model_name, model in self.model_dict.items():
+            logging.info(f"Training {model_name} model")
             if save_models:
                 self.metric[model_name] = model(self.x_train, self.y_train, self.x_test, self.y_test,
                                                 "default_file_name")

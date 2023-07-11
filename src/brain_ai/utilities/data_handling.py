@@ -63,7 +63,7 @@ def append_to_json_file(output_file_path: str, data: Any) -> None:
 class DataHandler:
     """
         This class is responsible for loading the data from the given path without specifying the type of data.
-        """
+    """
 
     def __init__(self, data_path=None, *args, **kwargs):
         self.data_path = data_path
@@ -73,7 +73,7 @@ class DataHandler:
 
     def load(self):
         if self.data_path.endswith('.csv'):
-            return pd.read_csv(self.data_path)
+            return pd.read_csv(self.data_path, low_memory=False)
         elif self.data_path.endswith('.xlsx'):
             return pd.read_excel(self.data_path)
         elif self.data_path.endswith('.json'):
@@ -91,6 +91,8 @@ class DataHandler:
             return write_json_file(output_file_path, data_to_write)
 
     def dataframe(self):
+        if type(self.data) is pd.DataFrame:
+            return self.data
 
         if type(self.data) is dict:
             self.data = DataTypeInterchange(self.data).dataframe
