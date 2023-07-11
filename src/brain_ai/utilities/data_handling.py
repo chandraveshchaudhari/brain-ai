@@ -65,11 +65,11 @@ class DataHandler:
         This class is responsible for loading the data from the given path without specifying the type of data.
         """
 
-    def __init__(self, data_path, *args, **kwargs):
+    def __init__(self, data_path=None, *args, **kwargs):
         self.data_path = data_path
         self.args = args
         self.kwargs = kwargs
-        self.data = self.load()
+        self.data = self.load() if data_path else None
 
     def load(self):
         if self.data_path.endswith('.csv'):

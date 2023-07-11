@@ -1,3 +1,4 @@
+import mlflow
 from sklearn.linear_model import LogisticRegression
 from sklearn import svm
 from sklearn.metrics import accuracy_score, precision_score, recall_score
@@ -45,7 +46,10 @@ def get_sklearn_model_by_name(model_name):
     return train_model_dict[model_name]
 
 
-def sklearn_model_train(model_name, x_train, y_train):
+def sklearn_model_train(model_name, x_train, y_train, mlflow_log=True):
+    if mlflow_log:
+        mlflow.sklearn.log_model()
+
     clf = get_sklearn_model_by_name(model_name)
     return clf.fit(x_train, y_train)
 
@@ -76,7 +80,10 @@ def get_random_forest(x_train, y_train, x_test, y_test, saved_model_file_name=No
 
 
 # neural network
-def get_neural_network(x_train, y_train, x_test, y_test, saved_model_file_name=None):
+def get_neural_network(x_train, y_train, x_test, y_test, saved_model_file_name=None, mlflow_log=True):
+    if mlflow_log:
+        mlflow.autolog()
+
     model = train_neural_network(x_train, y_train)
     result = model.predict(x_test)
 
@@ -99,6 +106,7 @@ def get_neural_network(x_train, y_train, x_test, y_test, saved_model_file_name=N
 
 
 def train_neural_network(x_train, y_train):
+
     model = keras.Sequential([
         layers.Dense(64, activation='relu'),
         layers.Dense(64, activation='relu'),

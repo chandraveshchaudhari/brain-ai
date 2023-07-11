@@ -21,6 +21,9 @@ class ModelZoo:
                 elif data_type == 'Time_series_data':
                     # todo: implement time series data
                     pass
+                elif data_type == 'Image_data':
+                    # todo: implement image data
+                    pass
                 else:
                     raise ValueError(f"Invalid data type {data_type}")
 
