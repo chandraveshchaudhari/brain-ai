@@ -18,7 +18,7 @@ class Memory:
                  },
                 {'Sentiment_data': {'path': 'path_of_tabular_data'}
                  }],
-                "Underlying_models_train_test_split": 0.2, }
+                "Underlying_models_train_test_split": 0.2, "tracking_uri": "path_to_save_the_models"}
 
     def generate_configuration_file(self, output_configuration_file_path=None):
         DataHandler().write(output_configuration_file_path, data=self.configuration)

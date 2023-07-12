@@ -16,7 +16,6 @@ def save_model(clf, model_file_name_with_pkl_extension):
 
 
 def load_model(model_file_path):
-
     if os_utils.get_file_extension_from_path(model_file_path) == "pkl":
         return joblib.load(model_file_path)
     if os_utils.get_file_extension_from_path(model_file_path) == "h5":
@@ -74,7 +73,6 @@ def get_k_neighbors_classifier(x_train, y_train, x_test, y_test, saved_model_fil
 
 # random forest
 def get_random_forest(x_train, y_train, x_test, y_test, saved_model_file_name=None):
-
     clf = RandomForestClassifier(n_estimators=20)
     return fit_predict_and_save_model(clf, x_train, y_train, x_test, y_test, saved_model_file_name)
 
@@ -106,7 +104,6 @@ def get_neural_network(x_train, y_train, x_test, y_test, saved_model_file_name=N
 
 
 def train_neural_network(x_train, y_train):
-
     model = keras.Sequential([
         layers.Dense(64, activation='relu'),
         layers.Dense(64, activation='relu'),
@@ -116,3 +113,10 @@ def train_neural_network(x_train, y_train):
     model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
     model.fit(x_train, y_train, epochs=10)
     return model
+
+
+class KerasNeuralNetwork:
+
+    def fit(self, x_train, y_train):
+        model = train_neural_network(x_train, y_train)
+        return model

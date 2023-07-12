@@ -12,10 +12,8 @@ class Brain(Memory):
         self.kwargs = kwargs
 
     def train(self):
-        print("Training the models", self.configuration)
         logging.info("Training the models")
         metric = ModelZoo(self.configuration).base_models_train_and_test()
-        # TabularAIExecutor(base_models_result_dataset, target).execute_all_models()
         return metric
 
     def inference(self):

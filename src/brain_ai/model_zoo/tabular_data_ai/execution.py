@@ -7,47 +7,67 @@ from tabular_data_ai import sample_func
 import logging
 
 import mlflow
+from sklearn import svm
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
+from sklearn.neighbors import KNeighborsClassifier
 
 from brain_ai.model_zoo.tabular_data_ai.machine_learning_algorithm import get_logistic_regression, \
     get_k_neighbors_classifier, get_random_forest, get_neural_network, get_svm_svc, train_neural_network, \
-    sklearn_model_train
+    sklearn_model_train, KerasNeuralNetwork
 
 
 class TabularAIExecutor:
-    def __init__(self, tabular_data, target, test_size=0.33):
+    def __init__(self, tabular_data, target, test_size=0.33, tracking_uri=None):
+        # Set the tracking URI
+        self.tracking_uri = tracking_uri
+
+
 
         # X_train, X_test, y_train, y_test
         self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(tabular_data, target,
                                                                                 test_size=test_size, random_state=42)
         self.metric = dict()
-        self.model_dict = {'LogisticRegression': get_logistic_regression, 'SVC': get_svm_svc,
-                           'KNeighborsClassifier': get_k_neighbors_classifier,
-                           'RandomForestClassifier': get_random_forest,
-                           'Neural Network': get_neural_network}
+        # self.model_dict = {'LogisticRegression': get_logistic_regression, 'SVC': get_svm_svc,
+        #                    'KNeighborsClassifier': get_k_neighbors_classifier,
+        #                    'RandomForestClassifier': get_random_forest,
+        #                    'Neural Network': get_neural_network}
+        self.models = [LogisticRegression(max_iter=1000), svm.SVC(), KNeighborsClassifier(),
+                       RandomForestClassifier(n_estimators=20), KerasNeuralNetwork()]
 
     # def compare_models_results(self):
     #     use prediction-techniques-comparison
 
-    def add_model(self, model, model_name):
-        self.model_dict[model_name] = model(self.x_train, self.y_train, self.x_test, self.y_test)
-
-    def execute_all_models(self, save_models=False, mlflow_log=True):
-        if mlflow_log:
+    def train_and_test(self):
+        for model in self.models:
+            if self.tracking_uri is not None:
+                mlflow.set_tracking_uri(self.tracking_uri)
             mlflow.autolog()
-
-        # TODO: use save_model argument to put model path.
-        # TODO: don't train model if it is already trained and saved.
-        for model_name, model in self.model_dict.items():
-            logging.info(f"Training {model_name} model")
-            if save_models:
-                self.metric[model_name] = model(self.x_train, self.y_train, self.x_test, self.y_test,
-                                                "default_file_name")
-            else:
-                self.metric[model_name] = model(self.x_train, self.y_train, self.x_test, self.y_test)
-
-        self.save()
+            clf = model.fit(self.x_train, self.y_train)
+            y_pred = clf.predict(self.x_test)
+            self.metric[type(model).__name__] = (self.y_test, y_pred)
         return self.metric
+
+    def add_model(self, model):
+        self.models.append(model)
+
+    # def execute_all_models(self, save_models=False, mlflow_log=True):
+    #     if mlflow_log:
+    #         mlflow.autolog()
+    #
+    #     # TODO: use save_model argument to put model path.
+    #     # TODO: don't train model if it is already trained and saved.
+    #     for model_name, model in self.model_dict.items():
+    #         logging.info(f"Training {model_name} model")
+    #         if save_models:
+    #             self.metric[model_name] = model(self.x_train, self.y_train, self.x_test, self.y_test,
+    #                                             "default_file_name")
+    #         else:
+    #             self.metric[model_name] = model(self.x_train, self.y_train, self.x_test, self.y_test)
+    #
+    #     self.save()
+    #     return self.metric
 
     def save(self, file_name="IT_Industry_Model_Metric.json"):
         pass
@@ -73,16 +93,13 @@ class TabularAIExecutor:
 
         return selected_metric
 
-    def inference(self, data_point_list, mlflow_log=True, tracking_uri='./mlruns'):
-
-        # Set the tracking URI
-        mlflow.set_tracking_uri(tracking_uri)
+    def inference(self, data_point_list, mlflow_log=True):
 
         model_name = list(self.best_metric().keys())[0]
         print(f"Using {model_name} model for inference.")
 
         if model_name == 'Neural Network':
-            model = train_neural_network(self.x_train, self.y_train, mlflow_log)
+            model = train_neural_network(self.x_train, self.y_train)
             result = model.predict(data_point_list)
             y_pred = []
             for i in result:
