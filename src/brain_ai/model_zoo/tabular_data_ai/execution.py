@@ -7,26 +7,49 @@ from tabular_data_ai import sample_func
 import logging
 
 import mlflow
+import pandas as pd
 from sklearn import svm
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier
 
+from brain_ai.data_processing.feature_engineering import FeatureEngineering
+from brain_ai.data_processing.wrangling import DataClean
 from brain_ai.model_zoo.tabular_data_ai.machine_learning_algorithm import get_logistic_regression, \
     get_k_neighbors_classifier, get_random_forest, get_neural_network, get_svm_svc, train_neural_network, \
     sklearn_model_train, KerasNeuralNetwork
 
 
 class TabularAIExecutor:
-    def __init__(self, tabular_data, target, test_size=0.33, tracking_uri=None):
+    def __init__(self, tabular_data, target_column_name, test_size=0.33, tracking_uri=None, feature_engineering=True,
+                 data_wrangling=True):
+        # To-do: put following in configDataClean(self.feature_engineered_tabular_data,
+        # target_column_name).execute(10000, 'percentage', 0)
         # Set the tracking URI
         self.tracking_uri = tracking_uri
 
+        if feature_engineering and data_wrangling:
+            self.feature_engineered_tabular_data = FeatureEngineering(tabular_data, target_column_name).scale()
+            self.data_wrangled_list = DataClean(self.feature_engineered_tabular_data,
+                                                        target_column_name).execute(10000, 'percentage', 0)
+            self.total_data = pd.DataFrame.from_dict(self.data_wrangled_list, 'index')
 
+            print(self.total_data)
+            self.data_target = self.total_data.pop(target_column_name)
+        elif feature_engineering:
+            self.feature_engineered_tabular_data = FeatureEngineering(tabular_data, target_column_name).scale()
+            total_data = self.feature_engineered_tabular_data
+            data_target = self.feature_engineered_tabular_data.pop(target_column_name)
+        elif data_wrangling:
+            self.data_wrangled_tabular_data = DataClean(tabular_data, target_column_name).execute()
+            total_data = self.data_wrangled_tabular_data
+            data_target = self.data_wrangled_tabular_data.pop(target_column_name)
+        else:
+            total_data = tabular_data
+            data_target = tabular_data.pop(target_column_name)
 
-        # X_train, X_test, y_train, y_test
-        self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(tabular_data, target,
+        self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(self.total_data, self.data_target,
                                                                                 test_size=test_size, random_state=42)
         self.metric = dict()
         # self.model_dict = {'LogisticRegression': get_logistic_regression, 'SVC': get_svm_svc,

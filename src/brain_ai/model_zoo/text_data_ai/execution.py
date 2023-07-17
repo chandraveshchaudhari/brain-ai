@@ -34,9 +34,16 @@ def preprocess(text):
 class SentimentDataExecutor:
     """make it a class and then use it in the main file"""
 
-    def __init__(self):
+    def __init__(self, tabular_data, target_column_name):
+        self.tabular_data = tabular_data
+        self.target_column_name = target_column_name
         self.finbert_tone = self.setup_finbert_tone()
         self.model, self.tokenizer, self.labels = self.setup_twitter_roberta_base_sentiment()
+
+    def add_result_column(self, result_column_name='score'):
+        self.tabular_data[result_column_name] = self.tabular_data[self.target_column_name].map(
+            self.execute_all_models)
+        return self.tabular_data
 
     def setup_finbert_tone(self):
         finbert = BertForSequenceClassification.from_pretrained('yiyanghkust/finbert-tone', num_labels=3)

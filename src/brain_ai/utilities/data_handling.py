@@ -108,24 +108,22 @@ class DataTypeInterchange:
     """Using this class we can interchange the data type from one to another.(dict "records", dataframe)"""
 
     def __init__(self, data):
-        self.data = data
-        logging.info(f"Data type is {type(self.data)}")
+        if type(data) is pd.DataFrame:
+            self.dataframe = data
+            self.records = self.dataframe.to_dict('records')
+        elif type(data) is list:
+            self.dataframe = pd.DataFrame.from_dict(data)
+            self.records = data
+        else:
+            logging.error(f"Data type ({type(data)}) is not supported.")
 
-    @property
-    def dataframe(self):
-        # Create a DataFrame from the dictionary
-        self.data = pd.DataFrame.from_dict(self.data)
-        return self.data  # return the dataframe
+    def dataframe_to_records(self):
+        self.records = self.dataframe.to_dict('records')
+        return self.records
 
-    @property
-    def records(self):
-        self.data = self.data.to_dict('records')
-        return self.data  # return the records
-
-    @property
-    def cache_dict(self):
-        self.data = self.data.to_dict()
-        return self.data
+    def records_to_dataframe(self):
+        self.dataframe = pd.DataFrame.from_dict(self.records)
+        return self.dataframe
 
 
 def first_valid_pandas_column_data(dataframe, column):

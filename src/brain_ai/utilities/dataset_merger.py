@@ -1,13 +1,15 @@
 """
 Takes multiple dataset and merge them based on common column.
 """
+import logging
+
 import pandas as pd
 
-from brain_ai.explainability.exploratory_data_analysis import find_common_columns
+from brain_ai.explainability.exploratory_data_analysis import find_common_columns, is_datetime_range_element
 from brain_ai.utilities.data_handling import DataTypeInterchange
 
 
-def is_in_range(datapoint, range_datapoint):
+def datapoint_is_in_range(datapoint, range_datapoint):
     assert isinstance(range_datapoint, str), "range_datapoint should be a string"
 
     lower_limit, upper_limit = range_datapoint.split(" to ")
@@ -17,13 +19,54 @@ def is_in_range(datapoint, range_datapoint):
         return False
 
 
+def range_is_in_range(record1, record_2, column):
+    lower_limit_1, upper_limit_1 = record1[column].split(" to ")
+    lower_limit_2, upper_limit_2 = record_2[column].split(" to ")
+    if upper_limit_2 >= lower_limit_1 >= lower_limit_2 and upper_limit_2 >= upper_limit_1 >= lower_limit_2:
+        return True
+    elif upper_limit_1 >= lower_limit_2 >= lower_limit_1 and upper_limit_1 >= upper_limit_2 >= lower_limit_1:
+        return True
+    else:
+        return False
+
+
+def checking_if_two_ranges_or_datapoints_intersect_in_two_columns(record1, record_2, column):
+    # not completed and not planned to be used. Do this manually
+    if isinstance(record1[column], str) and isinstance(record1[column], str):
+        if " to " in record1[column].lower() and " to " in record_2[column].lower():
+            return range_is_in_range(record1, record_2, column)
+        elif " to " in record1[column].lower() and " to " not in record_2[column].lower():
+            return datapoint_is_in_range(record_2[column], record1[column])
+        elif " to " in record_2[column].lower() and " to " not in record1[column].lower():
+            return datapoint_is_in_range(record1[column], record_2[column])
+    else:
+        return False
+
+
+def list_of_dataframe_wrt_range_column(list_of_datasets):
+    list_of_range_column_dataset = []
+
+    for dataset in list_of_datasets:
+        for column in find_common_columns(list_of_datasets):
+            if is_datetime_range_element(dataset[column][dataset[column].first_valid_index()]):
+                list_of_range_column_dataset.append(dataset)
+    left_over_datasets = [dataset for dataset in list_of_datasets if dataset not in list_of_range_column_dataset]
+
+    return list_of_range_column_dataset, left_over_datasets
+
+
 class Merge:
 
     def __init__(self, list_of_datasets):
-        self.list_of_datasets = list_of_datasets
-        self.common_columns = find_common_columns(self.list_of_datasets)
-        self.descending_list_of_dataframe_by_length = list(
-            sorted(self.list_of_datasets, key=lambda x: len(x), reverse=True))
+
+        self.common_columns = find_common_columns(list_of_datasets)
+        if len(self.common_columns) == 0:
+            raise Exception("No common columns found in the datasets")
+        self.list_of_datasets = list_of_dataframe_wrt_range_column(list_of_datasets)
+        print(f"Common columns are {self.common_columns}")
+        logging.info(f"Common columns are {self.common_columns}")
+
+        self.sorting_column_list = self.get_sorting_column_list()
 
     def merge_all_dataset(self):
         """
@@ -36,13 +79,21 @@ class Merge:
         -------
 
         """
-        merged_records_list = DataTypeInterchange(self.descending_list_of_dataframe_by_length[0]).records
+        # TODO: filter each dataset based on intersection within each categorical common column
+        merged_data_list = DataTypeInterchange(self.list_of_datasets[0]).records
+        i = 1
 
-        for dataset in self.descending_list_of_dataframe_by_length[1:]:
-            record_list = DataTypeInterchange(dataset).records
-            merged_records_list = self.merge(merged_records_list, record_list)
+        for dataset in self.list_of_datasets[1:]:
+            merged_data_list = self.merge(merged_data_list,
+                                          DataTypeInterchange(dataset).records)
 
-        return merged_records_list
+            DataTypeInterchange(merged_data_list).dataframe.to_csv(f"merged_dataset_{i}.csv", index=False)
+            i += 1
+
+        merged_dataset_path = "merged_dataset.csv"
+        DataTypeInterchange(merged_data_list).dataframe.to_csv(merged_dataset_path, index=False)
+
+        return merged_dataset_path
 
     def get_sorting_column_list(self):
         start, mid, end = [], [], []
@@ -53,30 +104,39 @@ class Merge:
                 mid.append(column)
             else:
                 end.append(column)
-        return start + mid + end
+        sorting_column_list = start + mid + end
+        print(sorting_column_list)
+        return sorting_column_list
 
     def condition_check_using_all_common_columns(self, record1, record_2):
-        for column in self.get_sorting_column_list():
-            if isinstance(record1[column], str) and record1[column].lower().contains(" to "):
-                if is_in_range(record_2[column], record1[column]):
-                    pass
-                else:
-                    return False
-            elif isinstance(record_2[column], str) and record_2[column].lower().contains(" to "):
-                if is_in_range(record1[column], record_2[column]):
-                    pass
-                else:
-                    return False
-            elif record1[column] == record_2[column]:
-                pass
 
-        return False
+        result = False
+        for column in self.sorting_column_list:
+            # print(f"checking {column}: {record1[column]} and {record_2[column]}")
+            if record1[column] == record_2[column] or \
+                    checking_if_two_ranges_or_datapoints_intersect_in_two_columns(record_2, record1, column):
+                result = True
+            else:
+                return False
+
+        return result
 
     def merge(self, record_list, record_list_2):
+        # TODO: use datatype interchange to convert the records to dataframe and vice versa
+
         merged_record_list = []
+        i = 0
         for record in record_list:
+
+            if i == 1000:
+                return merged_record_list
+
             for record_2 in record_list_2:
                 if self.condition_check_using_all_common_columns(record, record_2):
-                    merged_record_list.append({**record, **record_2})
+                    print(f"{record},---------------------------\n {record_2}")
+                    new_record = {**record, **record_2}
+                    merged_record_list.append(new_record)
+                    print(f"merging {i}th record, {new_record} records merged)")
+                    i += 1
 
         return merged_record_list

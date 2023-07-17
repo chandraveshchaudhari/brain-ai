@@ -2,7 +2,16 @@ import pandas as pd
 
 
 class DataClean:
-    def __init__(self, pandas_data_dict_records):
+    def __init__(self, pandas_data_dict_records, target_column_name=None):
+        if isinstance(pandas_data_dict_records, dict):
+            pandas_data_dict_records = pd.DataFrame.from_dict(pandas_data_dict_records)
+
+        if target_column_name:
+            pandas_data_dict_records = pandas_data_dict_records[pandas_data_dict_records[target_column_name].notna()]
+            print(pandas_data_dict_records)
+        if isinstance(pandas_data_dict_records, pd.DataFrame):
+            pandas_data_dict_records = pandas_data_dict_records.to_dict('records')
+
         self.list_of_data_dict = dict()
         for index, row in enumerate(pandas_data_dict_records):
             self.list_of_data_dict[index] = row
@@ -67,7 +76,7 @@ class DataClean:
                     self.row_values[row][1] += 1
                     self.column_values[column_name][1] += 1
 
-        print("all points checked")
+        print("all points checked", self.row_values, self.column_values)
 
     def get_maximum_count_of_nan_values(self, data_map=None):
         print("get_maximum_count_of_nan_values")

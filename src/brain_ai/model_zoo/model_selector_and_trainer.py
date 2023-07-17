@@ -15,16 +15,24 @@ class ModelZoo:
             for data_type, data in dataset.items():
                 if data_type == 'Tabular_data':
                     tabular_data = DataHandler(data['path']).dataframe()
-                    target = tabular_data.pop(data['target'])
-                    print(f"tabular_data: {tabular_data}, target: {target}")
+                    target_column_name = data['target']
+                    print(f"tabular_data: {tabular_data}, target: {target_column_name}")
 
                     tracking_uri = self.configuration['tracking_uri'] if 'tracking_uri' in self.configuration else None
-                    self.metric['Tabular_data'] = TabularAIExecutor(tabular_data, target, data['test_size'],
+                    self.metric['Tabular_data'] = TabularAIExecutor(tabular_data, target_column_name, data['test_size'],
                                                                     tracking_uri).train_and_test()
-                elif data_type == 'Text_data':
+                elif data_type == 'Sentiment_data':
                     logging.info("using already trained")
                     # testing the already trained models
-                    SentimentDataExecutor().execute_all_models(data)
+                    # testing dataset
+                    tabular_data = DataHandler(data['path']).dataframe()
+                    target_column_name = data['target']
+                    if 'memory_check' in data and data['memory_check']:
+                        test_result = data['path'].split('/')[-1].split('.')[0] + '_test_result.csv'
+                        self.metric['Sentiment_data'] = DataHandler(test_result).dataframe()
+                    else:
+                        self.metric['Sentiment_data'] = SentimentDataExecutor(tabular_data,
+                                                                              target_column_name).add_result_column()
                 elif data_type == 'Time_series_data':
                     # todo: implement time series data
                     pass

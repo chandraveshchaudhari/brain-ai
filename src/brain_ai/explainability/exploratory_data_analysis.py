@@ -1,6 +1,6 @@
 
 
-def find_common_columns(*dataframes):
+def find_common_columns(dataframes):
     if len(dataframes) < 2:
         return []
 
@@ -10,3 +10,10 @@ def find_common_columns(*dataframes):
         common_columns = common_columns.intersection(set(dataframe.columns))
 
     return list(common_columns)
+
+def is_datetime_range_element(text):
+    if " to " in text:
+        return True
+    else:
+        return False
+

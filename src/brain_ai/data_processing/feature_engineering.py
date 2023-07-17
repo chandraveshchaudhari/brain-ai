@@ -1,9 +1,25 @@
+# https://auto.gluon.ai/stable/api/autogluon.features.html
+
 from math import log
 
 import pandas as pd
 from sklearn.preprocessing import StandardScaler, MinMaxScaler, LabelEncoder
 
-from data_processing.data_creation import get_datatime_type
+
+def get_datatime_type(data_string):
+    if data_string.startswith("3/31/"):
+        return "Q1"
+    elif data_string.startswith("6/30/"):
+        return "Q2"
+    elif data_string.startswith("9/30/"):
+        return "Q3"
+    elif data_string.startswith("12/31/"):
+        return "Q4"
+    elif data_string.startswith("12/1/"):
+        return "Y"
+    else:
+        print(data_string)
+        return None
 
 
 def logarithm_transformation_apply(number, base=None):
@@ -47,10 +63,10 @@ def date_format_to_numeric_format(date_format, start_date=2006):
 
 
 class FeatureEngineering:
-    def __init__(self, dataset_df, configuration_dictionary):
+    def __init__(self, dataset_df, target_column_name):
         """{'StandardScaler':[], 'MinMaxScaler':[], 'logarithm_transformation_apply':[],
                                     'scaling_time_column':[], 'LabelEncoder':[]}"""
-        self.configuration_dictionary = configuration_dictionary
+        self.configuration_dictionary = generating_column_scaling_type_dict(dataset_df, target_column_name)
         self.dataset_df = dataset_df
 
     def get_available_columns_list(self, input_column_names_list):
@@ -133,7 +149,7 @@ def columns_union(dataset_df_1, dataset_df_2):
     return all_columns
 
 
-def generating_column_scaling_type_dict(dataset_df):
+def generating_column_scaling_type_dict(dataset_df, target_column_name):
     # creating configuration
     column_scaling_type_dict = {'StandardScaler': [], 'MinMaxScaler': [], 'logarithm_transformation_apply': [],
                                 'scaling_time_column': [], 'LabelEncoder': [], 'Delete': []}
@@ -141,7 +157,9 @@ def generating_column_scaling_type_dict(dataset_df):
     all_columns = dataset_df.columns.to_list()
 
     for column in all_columns:
-        if column.endswith('(x)'):
+        if column == target_column_name:
+            column_scaling_type_dict['LabelEncoder'].append(column)
+        elif column.endswith('(x)'):
             column_scaling_type_dict['MinMaxScaler'].append(column)
         elif column.endswith('(%)'):
             column_scaling_type_dict['StandardScaler'].append(column)
