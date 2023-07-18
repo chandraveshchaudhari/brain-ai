@@ -1,3 +1,4 @@
+from datetime import datetime
 
 
 def find_common_columns(dataframes):
@@ -11,9 +12,29 @@ def find_common_columns(dataframes):
 
     return list(common_columns)
 
+
 def is_datetime_range_element(text):
-    if " to " in text:
+    if isinstance(text, str) and " to " in text:
+        lower, upper = text.split(" to ")
+        if is_datetime_element(lower) and is_datetime_element(upper):
+            return True
+
+    return False
+
+
+def range_element(text):
+    lower, upper = text.split(" to ")
+    return datetime_element(lower), datetime_element(upper)
+
+
+def is_datetime_element(text, split_character="-"):
+    try:
+        datetime_element(text, split_character)
         return True
-    else:
+    except:
         return False
 
+
+def datetime_element(text, split_character="-"):
+    year, month, day = text.split(split_character)
+    return datetime(year=int(year), month=int(month), day=int(day))

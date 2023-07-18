@@ -1,4 +1,4 @@
-import logging
+# import logging
 
 from brain_ai.memory import Memory
 from brain_ai.model_zoo.model_selector_and_trainer import ModelZoo
@@ -29,12 +29,12 @@ class Brain(Memory):
             self.merged_dataset_path = Merge(list_of_dataset).merge_all_dataset()
 
     def base_model_train(self):
-        logging.info("Training the models")
+        # logging.info("Training the models")
         metric = ModelZoo(self.configuration).base_models_train_and_test()
         return metric
 
     def train(self):
-        logging.info("Training the models")
+        # logging.info("Training the models")
         metric = TabularAIExecutor(DataHandler(self.merged_dataset_path).dataframe(),
                                    self.configuration['target'])
         return metric
@@ -42,3 +42,8 @@ class Brain(Memory):
     def inference(self):
         # get the saved models from the memory and use them to predict the new data.
         pass
+
+#
+# if __name__ == "__main__":
+#     my_brain = Brain("/home/chandravesh/PhDWork/JupyterProjects/brain-ai-jupyter-notebooks/")
+#     my_brain.merge_dataset()
