@@ -1,4 +1,5 @@
 # https://auto.gluon.ai/stable/api/autogluon.features.html
+# feature_generator = AutoMLPipelineFeatureGenerator().fit_transform(X=X_train, y=y_train)
 
 from math import log
 

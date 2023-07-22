@@ -2,18 +2,21 @@ import pandas as pd
 
 
 class DataClean:
-    def __init__(self, pandas_data_dict_records, target_column_name=None):
-        if isinstance(pandas_data_dict_records, dict):
-            pandas_data_dict_records = pd.DataFrame.from_dict(pandas_data_dict_records)
+    def __init__(self, pandas_dataframe, target_column_name=None):
+        self.pandas_dataframe = pandas_dataframe if isinstance(pandas_dataframe,
+                                                               pd.DataFrame) else pd.DataFrame.from_dict(
+            pandas_dataframe)
+        if isinstance(pandas_dataframe, list):
+            pandas_dataframe = pd.DataFrame.from_dict(pandas_dataframe)
 
         if target_column_name:
-            pandas_data_dict_records = pandas_data_dict_records[pandas_data_dict_records[target_column_name].notna()]
-            print(pandas_data_dict_records)
-        if isinstance(pandas_data_dict_records, pd.DataFrame):
-            pandas_data_dict_records = pandas_data_dict_records.to_dict('records')
+            pandas_dataframe = pandas_dataframe[pandas_dataframe[target_column_name].notna()]
+            print(pandas_dataframe)
+        if isinstance(pandas_dataframe, pd.DataFrame):
+            pandas_dataframe = pandas_dataframe.to_dict('records')
 
         self.list_of_data_dict = dict()
-        for index, row in enumerate(pandas_data_dict_records):
+        for index, row in enumerate(pandas_dataframe):
             self.list_of_data_dict[index] = row
         self.checkpoints = []
         self.row_values = dict()
@@ -47,7 +50,7 @@ class DataClean:
         return null_sum, data_point_sum
 
     def check_all_null_values(self, data=None):
-        print("check_all_null_values")
+        # print("check_all_null_values")
         # select default or new data
         if data:
             list_of_data_dict = data
@@ -57,13 +60,13 @@ class DataClean:
         # Data structure: row * column so null_values [ row_values, column_values]
         for row_index in self.list_of_data_dict:
             self.row_values[row_index] = [0, 0]
-        print("row data holder created")
+        # print("row data holder created")
 
-        #print(next(iter(list_of_data_dict)))
+        # print(next(iter(list_of_data_dict)))
         column_names = list_of_data_dict[next(iter(list_of_data_dict))].keys()
         for col in column_names:
             self.column_values[col] = [0, 0]
-        print("column values holder created")
+        # print("column values holder created")
 
         # loop for checking nan values
 
@@ -76,10 +79,10 @@ class DataClean:
                     self.row_values[row][1] += 1
                     self.column_values[column_name][1] += 1
 
-        print("all points checked", self.row_values, self.column_values)
+        # print("all points checked", self.row_values, self.column_values)
 
     def get_maximum_count_of_nan_values(self, data_map=None):
-        print("get_maximum_count_of_nan_values")
+        # print("get_maximum_count_of_nan_values")
         if data_map:
             data = {**data_map[0], **data_map[1]}
         else:
@@ -93,15 +96,15 @@ class DataClean:
                 res = [{key: value}]
             elif value[0] != 0 and value[0] == maximum_nan:
                 res.append({key: value})
-        print(f"all possible null values to remove--> {res}")
+        # print(f"all possible null values to remove--> {res}")
         return res
 
     def get_minimum_count_of_data_values(self, data=None):
-        print("get_minimum_count_of_data_values")
+        # print("get_minimum_count_of_data_values")
         if not data:
             data = self.get_maximum_count_of_nan_values()
 
-        print(data)
+        # print(data)
         minimum_data = data[0]
         for element in data:
             for key, value in element.items():
@@ -112,7 +115,7 @@ class DataClean:
 
     def check_percentage_nan_data(self, data_map=None):
         # method to choose row, column or both
-        print("get_maximum_percentage_of_nan_values")
+        # print("get_maximum_percentage_of_nan_values")
         if data_map:
             data = {**data_map[0], **data_map[1]}
         else:
@@ -121,7 +124,7 @@ class DataClean:
         percentage_data = dict()
         row_total = len(self.row_values)
         column_total = len(self.column_values)
-        print(f'row_total - {row_total}, column_total - {column_total}')
+        # print(f'row_total - {row_total}, column_total - {column_total}')
 
         for key, value in data.items():
             if type(key) is int:
@@ -146,7 +149,7 @@ class DataClean:
     def remove_best_possible_row_column(self, method):
         for k, _ in self.row_or_column_to_remove(method).items():
             key = k
-        print(f"remove_best_possible_row_column- {key}")
+        # print(f"remove_best_possible_row_column- {key}")
 
         if type(key) is int:
             self.update_before_del(key)
@@ -165,7 +168,7 @@ class DataClean:
 
     def update_before_del(self, key):
         if type(key) is int:
-            print(f"removing -> {key}")
+            # print(f"removing -> {key}")
             self.update_column_mapping_values(key)
             self.remove_key_from_mapping(key)
         else:
@@ -199,9 +202,9 @@ class DataClean:
     def check_nan(self, method='percentage'):
         if method == 'count':
             row_info = max((self.row_values, self.column_values)[0].values(), key=lambda x: (x[0], x[1]))
-            print(f"ROW --- null values: {row_info[0]}, data values: {row_info[1]}")
+            # print(f"ROW --- null values: {row_info[0]}, data values: {row_info[1]}")
             column_info = max((self.row_values, self.column_values)[1].values(), key=lambda x: (x[0], x[1]))
-            print(f"COLUMN --- null values: {column_info[0]}, data values: {column_info[1]}")
+            # print(f"COLUMN --- null values: {column_info[0]}, data values: {column_info[1]}")
             return max(row_info[0], column_info[0])
         if method == 'percentage':
             for value in self.get_maximum_percentage_of_nan_values()[0].values():
@@ -218,14 +221,16 @@ class DataClean:
     def sorted_percentage_nan(self):
         return sorted(self.check_percentage_nan_data().items(), reverse=True, key=lambda x: x[1])
 
-    def execute(self, iteration, method, threshold):
+    def execute(self, iteration=None, threshold=1, method='percentage'):
         # self.check_all_null_values()
-        print("execute")
+        # print("execute")
+        if not iteration:
+            iteration = len(self.pandas_dataframe)
 
         for i in range(iteration):
             print(f"iteration - {i}")
             self.check_all_null_values()
-            print(len(self.list_of_data_dict))
+            # print(len(self.list_of_data_dict))
             if self.data_cleaning_status(method, threshold):
                 self.remove_best_possible_row_column(method)
             else:
@@ -238,5 +243,3 @@ def dict_of_dict_to_list_of_dict(dict_of_dict):
     for index in dict_of_dict:
         list_of_dict.append(dict_of_dict[index])
     return list_of_dict
-
-
