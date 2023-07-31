@@ -40,7 +40,7 @@ def range_is_in_range(record1, record_2, column):
 def checking_if_two_ranges_or_datapoints_intersect_in_two_columns(record1, record_2, column):
     # not completed and not planned to be used. Do this manually
 
-    print(f"{record1[column]} and {record_2[column]}")
+    # print(f"{record1[column]} and {record_2[column]}")
     if is_datetime_range_element(record1[column]) and is_datetime_range_element(record_2[column]):
         return range_is_in_range(record1, record_2, column)
     elif is_datetime_range_element(record1[column]) and is_datetime_element(record_2[column]):
