@@ -168,3 +168,26 @@ def create_directories_from_path(path):
 class DatasetCreator:
     # creates the dataset by running models on the data
     pass
+
+
+class DataPaths:
+    def __init__(self, config_location=None):
+        self.config_location = config_location
+        self.paths = read_json_file(self.config_location) if os.path.isfile(self.config_location) else {}
+
+    def save_file_paths(self):
+        file_format = self.config_location.split(".")[-1]
+
+        if file_format == "json":
+            write_json_file(self.config_location, self.paths)
+        else:
+            raise NotImplementedError(f"File format {file_format} is not implemented yet")
+
+    def update(self, data_name_and_path_mapping):
+        create_directories_from_path(list(data_name_and_path_mapping.values())[0])
+        self.paths.update(data_name_and_path_mapping)
+        # Sort the dictionary by values
+        sorted_data_by_values = {k: v for k, v in sorted(self.paths.items(), key=lambda item: item[1])}
+        self.paths = sorted_data_by_values
+
+        self.save_file_paths()
