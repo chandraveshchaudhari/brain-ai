@@ -1,10 +1,11 @@
 # https://auto.gluon.ai/stable/api/autogluon.features.html
 # feature_generator = AutoMLPipelineFeatureGenerator().fit_transform(X=X_train, y=y_train)
 
-from math import log
+from math import log, e
 
+import numpy as np
 import pandas as pd
-from sklearn.preprocessing import StandardScaler, MinMaxScaler, LabelEncoder
+from sklearn.preprocessing import StandardScaler, MinMaxScaler, LabelEncoder, RobustScaler
 
 
 def get_datatime_type(data_string):
@@ -23,19 +24,12 @@ def get_datatime_type(data_string):
         return None
 
 
-def logarithm_transformation_apply(number, base=None):
-    # NaNs are treated as missing values: disregarded in fit, and maintained in transform.
-    if not number:
-        return None
-
-    if number in (-1, 0, 1):
-        return 0
-    negative = False if number >= 0 else True
-
-    absolute_value = abs(number) if negative else number
-    logarithm_value = log(absolute_value, base) if base else log(absolute_value)
-
-    return -1 * logarithm_value if negative else logarithm_value
+def logarithm_transformation_apply(number, base=e):
+    if base is None:
+        base = 10
+    else:
+        base = int(base)
+    return log(number, base)
 
 
 def df_apply_custom_function_on_multiple_cols(dataframe, columns_list, custom_function, **kwargs):
@@ -54,6 +48,21 @@ def scaling_time_column(dataset, column_name, elements_time_format="YYYY"):
         dataset[column_name] = [date_format_to_numeric_format(x) for x in time_column_list]
 
 
+def engineer_datetime(pandas_datetime_column):
+    # Convert the column to datetime
+    pandas_datetime_column = pd.to_datetime(pandas_datetime_column)
+    # Get the minimum datetime in the column
+    min_datetime = pandas_datetime_column.min()
+
+    # Decrease all of the datetimes in the column by the minimum datetime
+    pandas_datetime_column = pandas_datetime_column - min_datetime
+
+    # Convert the datetimes to floats
+    pandas_datetime_column = pandas_datetime_column / np.timedelta64(1, 'D')
+
+    return pandas_datetime_column
+
+
 def date_format_to_numeric_format(date_format, start_date=2006):
     time_config = {"Q1": 0.2, "Q2": 0.4, "Q3": 0.6, "Q4": 0.8, 'Y': 1}
     string_date_format = str(date_format)
@@ -67,8 +76,9 @@ class FeatureEngineering:
     def __init__(self, dataset_df, target_column_name):
         """{'StandardScaler':[], 'MinMaxScaler':[], 'logarithm_transformation_apply':[],
                                     'scaling_time_column':[], 'LabelEncoder':[]}"""
-        self.configuration_dictionary = generating_column_scaling_type_dict(dataset_df, target_column_name)
         self.dataset_df = dataset_df
+        self.target_column_name = target_column_name
+        self.configuration_dictionary = self.deciding_feature_engineering_based_on_columns()
 
     def get_available_columns_list(self, input_column_names_list):
         available_columns = []
@@ -76,6 +86,30 @@ class FeatureEngineering:
             if col in self.dataset_df.columns:
                 available_columns.append(col)
         return available_columns
+
+    def deciding_feature_engineering_based_on_columns(self):
+        column_scaling_type_dict = {'StandardScaler': [], 'RobustScaler': [], 'MinMaxScaler': [],
+                                    'logarithm_transformation_apply': [],
+                                    'engineer_datetime': [], 'LabelEncoder': [], 'Delete': []}
+        for column in self.dataset_df.columns:
+            first_valid_index = self.dataset_df[column].first_valid_index()
+
+            if column == self.target_column_name:
+                column_scaling_type_dict['LabelEncoder'].append(column)
+            elif check_if_datetime_as_object_feature(self.dataset_df[column]):
+                column_scaling_type_dict['engineer_datetime'].append(column)
+            elif get_type_family_raw(self.dataset_df[column].dtype) in ('int', 'float'):
+                if self.dataset_df[column].min() < 0:
+                    column_scaling_type_dict['RobustScaler'].append(column)
+                elif self.dataset_df[column].min() > 10000:
+                    column_scaling_type_dict['logarithm_transformation_apply'].append(column)
+                elif self.dataset_df[column].min() > 0:
+                    column_scaling_type_dict['MinMaxScaler'].append(column)
+            elif get_type_family_raw(self.dataset_df[column].dtype) == 'object':
+                column_scaling_type_dict['Delete'].append(column)
+            else:
+                print(f"{column} of type ({type(self.dataset_df[column])}) is not yet implemented")
+        return column_scaling_type_dict
 
     def scale(self):
         for function_name, column_names_list in self.configuration_dictionary.items():
@@ -87,20 +121,78 @@ class FeatureEngineering:
                 self.dataset_df = self.dataset_df.drop(columns=column_names_list)
             elif function_name == 'StandardScaler':
                 self.dataset_df[available_columns] = StandardScaler().fit_transform(self.dataset_df[available_columns])
+            elif function_name == 'RobustScaler':
+                self.dataset_df[available_columns] = RobustScaler().fit_transform(self.dataset_df[available_columns])
             elif function_name == 'MinMaxScaler':
                 self.dataset_df[available_columns] = MinMaxScaler().fit_transform(self.dataset_df[available_columns])
             elif function_name == 'logarithm_transformation_apply':
                 df_apply_custom_function_on_multiple_cols(self.dataset_df, available_columns,
                                                           logarithm_transformation_apply)
-            elif function_name == 'scaling_time_column':
-                scaling_time_column(self.dataset_df, available_columns[0], 'DD/MM/YYYY')
+            elif function_name == 'engineer_datetime':
+                for column in available_columns:
+                    self.dataset_df[column] = engineer_datetime(self.dataset_df[column])
             elif function_name == 'LabelEncoder':
-                self.dataset_df[available_columns[0]] = LabelEncoder().fit_transform(list(self.dataset_df[available_columns[0]]))
-
+                self.dataset_df[available_columns[0]] = LabelEncoder().fit_transform(
+                    list(self.dataset_df[available_columns[0]]))
             else:
                 print(f"The function '{function_name}' is not yet implemented")
 
         return self.dataset_df
+
+
+def get_type_family_raw(dtype) -> str:
+    """From dtype, gets the dtype family."""
+    try:
+        if isinstance(dtype, pd.SparseDtype):
+            dtype = dtype.subtype
+        if dtype.name == "category":
+            return "category"
+        if "datetime" in dtype.name:
+            return "datetime"
+        if "string" in dtype.name:
+            return "object"
+        elif np.issubdtype(dtype, np.integer):
+            return "int"
+        elif np.issubdtype(dtype, np.floating):
+            return "float"
+    except Exception as err:
+        print(
+            f"Warning: dtype {dtype} is not recognized as a valid dtype by numpy! " f"AutoGluon may incorrectly handle this feature...")
+
+    if dtype.name in ["bool", "bool_"]:
+        return "bool"
+    elif dtype.name in ["str", "string", "object"]:
+        return "object"
+    else:
+        return dtype.name
+
+
+def check_if_datetime_as_object_feature(X) -> bool:
+    type_family = get_type_family_raw(X.dtype)
+    # TODO: Check if low numeric numbers, could be categorical encoding!
+    # TODO: If low numeric, potentially it is just numeric instead of date
+    if X.isnull().all():
+        return False
+    if type_family != "object":  # TODO: seconds from epoch support
+        return False
+    try:
+        # TODO: pd.Series(['20170204','20170205','20170206']) is incorrectly not detected as datetime_as_object
+        #  But we don't want pd.Series(['184','822828','20170206']) to be detected as datetime_as_object
+        #  Need some smart logic (check min/max values?, check last 2 values don't go >31?)
+        pd.to_numeric(X)
+    except:
+        try:
+            if len(X) > 500:
+                # Sample to speed-up type inference
+                X = X.sample(n=500, random_state=0)
+            result = pd.to_datetime(X, errors="coerce")
+            if result.isnull().mean() > 0.8:  # If over 80% of the rows are NaN
+                return False
+            return True
+        except:
+            return False
+    else:
+        return False
 
 
 def convert_string_numeric_values_to_float(value, values_to_be_removed='%x', values_to_be_replaced=','):
@@ -168,11 +260,11 @@ def generating_column_scaling_type_dict(dataset_df, target_column_name):
             column_scaling_type_dict['scaling_time_column'].append(column)
         elif column == 'Stock direction':
             column_scaling_type_dict['LabelEncoder'].append(column)
+        elif column == 'logarithm_transformation_apply':
+            column_scaling_type_dict['logarithm_transformation_apply'].append(column)
         elif type(dataset_df[column].iloc[0]) is str:
             column_scaling_type_dict['Delete'].append(column)
         else:
             print(f"{column} logarithm function is not working, so using the StandardScaler")
             column_scaling_type_dict['StandardScaler'].append(column)
     return column_scaling_type_dict
-
-
