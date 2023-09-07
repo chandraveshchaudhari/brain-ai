@@ -124,18 +124,4 @@ class KerasNeuralNetwork:
         model = train_neural_network(x_train, y_train)
         return model
 
-def autogluon_tabular_predictor():
-    feature_generator = AutoMLPipelineFeatureGenerator()
-    X_train_transformed = feature_generator.fit_transform(X=X_train, y=y_train)
 
-    X_test_transformed = feature_generator.transform(test_data)
-
-    label = 'class'
-    predictor = TabularPredictor(label=label).fit(dataset)
-    test_data = TabularDataset('https://autogluon.s3.amazonaws.com/datasets/Inc/test.csv')
-    y_test = test_data[label]
-    test_data_nolab = test_data.drop(columns=[label])  # delete label column
-    y_pred = predictor.predict(test_data_nolab)
-    perf = predictor.evaluate_predictions(y_true=y_test, y_pred=y_pred, auxiliary_metrics=True)
-    predictor.leaderboard(test_data, silent=True)
-    return perf

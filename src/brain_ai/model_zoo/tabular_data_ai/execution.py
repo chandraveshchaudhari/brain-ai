@@ -5,6 +5,7 @@ if there are more than one modules then import like this:
 from tabular_data_ai import sample_func
 """
 import logging
+import os
 
 import mlflow
 import pandas as pd
@@ -32,7 +33,7 @@ class TabularAIExecutor:
         if feature_engineering and data_wrangling:
             self.feature_engineered_tabular_data = FeatureEngineering(tabular_data, target_column_name).scale()
             self.data_wrangled_list = DataClean(self.feature_engineered_tabular_data,
-                                                        target_column_name).execute(10000, 'percentage', 0)
+                                                target_column_name).execute(10000, 'percentage', 0)
             self.total_data = pd.DataFrame.from_dict(self.data_wrangled_list, 'index')
 
             print(self.total_data)
@@ -134,3 +135,61 @@ class TabularAIExecutor:
         else:
             model = sklearn_model_train(model_name, self.x_train, self.y_train, mlflow_log)
             return model.predict(data_point_list)
+
+
+class TabularAutoML:
+    def __init__(self, logger=None, saved_models_directory=os.getcwd(),
+                 tabular_log_directory_path=os.getcwd()):
+
+        self.logger = logger
+        self.logger.welcome_log("Tabular AutoML")
+
+        self.saved_models_directory_path = os.path.join(saved_models_directory, 'Tabular AutoML Saved Models')
+        os.makedirs(self.saved_models_directory_path, exist_ok=True)
+
+        self.tabular_log_directory_path = os.path.join(tabular_log_directory_path, 'Tabular AutoML logs')
+        os.makedirs(self.tabular_log_directory_path, exist_ok=True)
+
+    def train(self):
+        pass
+
+    def autogluon(self, enable_text_special_features=False,
+                  enable_text_ngram_features=False,
+                  enable_raw_text_features=False,
+                  enable_vision_features=False):
+        from autogluon.tabular import TabularPredictor
+        from autogluon.features.generators import AutoMLPipelineFeatureGenerator
+
+        package_name = 'AutoGluon Tabular'
+        saved_model_location = os.path.join(self.saved_models_location, f'{package_name} Saved Models')
+        os.makedirs(saved_model_location, exist_ok=True)
+        tabular_auto_ml_log_path = os.path.join(self.tabular_log_directory_path,
+                                                f'{package_name} logs.log')
+
+        custom_feature_generator = AutoMLPipelineFeatureGenerator(
+            enable_text_special_features=enable_text_special_features,
+            enable_text_ngram_features=enable_text_ngram_features,
+            enable_raw_text_features=enable_raw_text_features,
+            enable_vision_features=enable_vision_features)
+
+        predictor = TabularPredictor(label='Stock direction', problem_type='binary', log_to_file=True,
+                                     log_file_path=tabular_auto_ml_log_path,
+                                     path=saved_model_location).fit(training_data, presets='best_quality',
+                                                                    feature_generator=custom_feature_generator
+                                                                    )
+        results = predictor.predict_multi(x_test)
+
+    def predict(self):
+        pass
+
+    def save(self):
+        pass
+
+    def load(self):
+        pass
+
+    def evaluate(self):
+        pass
+
+    def compare(self):
+        pass

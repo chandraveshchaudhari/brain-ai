@@ -1,18 +1,29 @@
-# import logging
+import os
 
 from brain_ai.memory import Memory
 from brain_ai.model_zoo.model_selector_and_trainer import ModelZoo
 from brain_ai.model_zoo.tabular_data_ai.execution import TabularAIExecutor
 from brain_ai.utilities.data_handling import DataHandler
 from brain_ai.utilities.dataset_merger import Merge
+from brain_ai.utilities.log_handling import Logger
 
 
 class Brain(Memory):
-    def __init__(self, memory_directory_path=None, *args, **kwargs):
+    def __init__(self, memory_directory_path=os.getcwd(), *args, **kwargs):
         super().__init__(memory_directory_path)
         self.merged_dataset_path = None
         self.args = args
         self.kwargs = kwargs
+
+        if os.path.exists(self.memory_directory_path):
+            print(f"Log directory already exists at {self.memory_directory_path}")
+
+        self.log_directory_path = os.path.join(self.memory_directory_path, 'Logs')
+        os.makedirs(self.log_directory_path, exist_ok=True)
+        self.logger = Logger(log_project_name="BrainAutoML", log_directory_path=self.log_directory_path)
+
+        self.tabular_saved_model_path = os.path.join(self.memory_directory_path, 'Tabular Saved Models')
+        os.makedirs(self.tabular_saved_model_path, exist_ok=True)
 
     def merge_dataset(self):
         # TODO: add the functionality to merge the dataset (too complicated to do it for unknown data types)
@@ -42,6 +53,12 @@ class Brain(Memory):
     def inference(self):
         # get the saved models from the memory and use them to predict the new data.
         pass
+
+    def train_tabular_ai(self):
+        from brain_ai.model_zoo.tabular_data_ai.execution import TabularAutoML
+
+        tabular_ai = TabularAutoML(self.logger, saved_models_location=self.tabular_saved_model_path,
+                                   tabular_log_directory_path=self.log_directory_path)
 
 #
 # if __name__ == "__main__":
