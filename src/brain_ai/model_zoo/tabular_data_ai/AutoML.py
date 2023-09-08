@@ -6,6 +6,8 @@ from tabular_data_ai import sample_func
 """
 import logging
 import os
+import h2o
+from h2o.automl import H2OAutoML
 
 import mlflow
 import pandas as pd
@@ -197,8 +199,26 @@ class TabularAutoML:
         self.tabular_log_directory_path = os.path.join(self.tabular_directory, 'Log')
         os.makedirs(self.tabular_log_directory_path, exist_ok=True)
 
-    def train(self):
-        pass
+    def train(self, clean_data=False):
+
+        all_predictions_dictionary = dict()
+        all_predictions_dictionary['AutoGluon'] = self.autogluon_automl()
+        if clean_data:
+            all_predictions_dictionary['AutoKeras'] = self.autokeras_automl()
+            all_predictions_dictionary['TPOT'] = self.tpot_automl()
+        all_predictions_dictionary['AutoSklearn'] = self.autosklearn_automl()
+        all_predictions_dictionary['PyCaret'] = self.pycaret_automl()
+        all_predictions_dictionary['ml_jar_automl'] = self.ml_jar_automl()
+        all_predictions_dictionary['H2O'] = self.h2o_automl()
+        self.logger.info(f"all_predictions_dictionary: {all_predictions_dictionary}")
+        write_json_file(os.path.join(self.saved_models_directory_path, 'all_predictions_dictionary.json'))
+
+        return all_predictions_dictionary
+
+
+
+
+
 
     def autogluon_automl(self, enable_text_special_features=False,
                          enable_text_ngram_features=False,
@@ -365,11 +385,57 @@ class TabularAutoML:
         # train models with AutoML
         automl = AutoML(mode="Perform", total_time_limit=mljar_total_time_limit, ml_task='binary_classification',
                         golden_features=False, features_selection=False, results_path=saved_model_location)
-        automl.fit(x_train, y_train)
+        automl.fit(self.x_train, self.y_train)
 
         # compute the accuracy on test data
-        predictions = automl.predict_all(x_test)
-        print(predictions.head())
+        predictions = automl.predict(self.x_test)
+        predictions_with_probability = automl.predict_all(self.x_test)
+        if predictions_with_probability is pd.DataFrame:
+            predictions_with_probability.to_csv(os.path.join(saved_model_location, 'predictions_with_probability.csv'))
+
+        return predictions
+
+    def h2o_automl(self, h2o_max_runtime_secs=7200):
+        package_name = 'H2O Tabular'
+
+        saved_model_location = os.path.join(self.saved_models_directory_path, f'{package_name} Saved Models')
+        os.makedirs(saved_model_location, exist_ok=True)
+
+        self.logger.info(f"{package_name} Models will be saved here: {saved_model_location}")
+
+        # Start the H2O cluster (locally)
+        h2o.init()
+
+        train_h2o = h2o.H2OFrame(self.training_data)
+        x = train_h2o.columns
+        y = self.target_column_name
+        x.remove(y)
+
+        # For binary classification, response should be a factor
+        self.training_data[y] = train_h2o[y].asfactor()
+
+        # Run AutoML for 20 base models
+        aml = H2OAutoML(max_models=2, seed=1)
+        aml.train(x=x, y=y, training_frame=train_h2o)
+
+        # View the AutoML Leaderboard
+        y_pred_dictionary = dict()
+        lb = aml.leaderboard
+        if lb is pd.DataFrame:
+            lb.to_csv(os.path.join(saved_model_location, 'leaderboard.csv'))
+        else:
+            try:
+                self.logger.info(f"Leaderboard: {lb}")
+            except Exception:
+                self.logger.info(f"Could not provide Leaderboard in log file.")
+
+        for model_id in lb['model_id']:
+            model = h2o.get_model(model_id)
+            y_pred = model.predict(h2o.H2OFrame(self.x_test))
+            h2o.save_model(model=model, path=saved_model_location, force=True)
+            y_pred_dictionary[model_id] = y_pred
+
+        return y_pred_dictionary
 
     def predict(self):
         pass
