@@ -191,3 +191,9 @@ class DataPaths:
         self.paths = sorted_data_by_values
 
         self.save_file_paths()
+
+
+def create_directory(directory_name):
+    """Creates a directory if it does not exist."""
+    if not os.path.exists(directory_name):
+        os.mkdir(directory_name)

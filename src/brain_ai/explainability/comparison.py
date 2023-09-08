@@ -6,6 +6,8 @@ from matplotlib import pyplot as plt
 from sklearn.metrics import confusion_matrix, precision_score, accuracy_score, recall_score, mean_squared_error, \
     r2_score
 
+# todo: from supervised.utils.additional_metrics import AdditionalMetrics
+
 
 def load_json(json_path):
     with open(json_path, 'r') as reader:

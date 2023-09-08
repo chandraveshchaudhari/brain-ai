@@ -2,7 +2,7 @@ import os
 
 from brain_ai.memory import Memory
 from brain_ai.model_zoo.model_selector_and_trainer import ModelZoo
-from brain_ai.model_zoo.tabular_data_ai.execution import TabularAIExecutor
+from brain_ai.model_zoo.tabular_data_ai.AutoML import TabularAIExecutor
 from brain_ai.utilities.data_handling import DataHandler
 from brain_ai.utilities.dataset_merger import Merge
 from brain_ai.utilities.log_handling import Logger
@@ -16,7 +16,7 @@ class Brain(Memory):
         self.kwargs = kwargs
 
         if os.path.exists(self.memory_directory_path):
-            print(f"Log directory already exists at {self.memory_directory_path}")
+            print(f"BrainAutoML directory already exists at {self.memory_directory_path}")
 
         self.log_directory_path = os.path.join(self.memory_directory_path, 'Logs')
         os.makedirs(self.log_directory_path, exist_ok=True)
@@ -55,7 +55,7 @@ class Brain(Memory):
         pass
 
     def train_tabular_ai(self):
-        from brain_ai.model_zoo.tabular_data_ai.execution import TabularAutoML
+        from brain_ai.model_zoo.tabular_data_ai.AutoML import TabularAutoML
 
         tabular_ai = TabularAutoML(self.logger, saved_models_location=self.tabular_saved_model_path,
                                    tabular_log_directory_path=self.log_directory_path)
