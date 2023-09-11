@@ -22,7 +22,8 @@ from brain_ai.data_processing.wrangling import DataClean
 from brain_ai.model_zoo.tabular_data_ai.machine_learning_algorithm import get_logistic_regression, \
     get_k_neighbors_classifier, get_random_forest, get_neural_network, get_svm_svc, train_neural_network, \
     sklearn_model_train, KerasNeuralNetwork
-from brain_ai.utilities.data_handling import DataHandler, write_json_file
+from brain_ai.utilities.data_handling import DataHandler, write_json_file, SaveData, save_to_pickle, load_from_pickle
+from brain_ai.utilities.log_handling import Logger
 
 
 class TabularAIExecutor:
@@ -144,12 +145,12 @@ class TabularAutoML:
     def __init__(self, data, target_data_or_column_name, split_data_by_column_name_and_value_dict=None, test_size=None,
                  logger=None, tabular_directory=os.getcwd()):
 
-        if data is str:
+        if type(data) is str:
             data = DataHandler(data).dataframe()
-            if data is not pd.DataFrame:
+            if type(data) is not pd.DataFrame:
                 raise TypeError("Data must be pandas DataFrame")
 
-        if target_data_or_column_name is str:
+        if type(target_data_or_column_name) is str:
             self.target_column_name = target_data_or_column_name
             self.complete_data = data.copy()
             self.target_data = data[self.target_column_name]
@@ -187,8 +188,6 @@ class TabularAutoML:
             self.x_test = self.testing_data.drop(columns=target_data_or_column_name)
 
         self.tabular_directory = tabular_directory
-        self.logger = logger
-        self.logger.welcome_log("Tabular AutoML")
 
         if os.path.exists(self.tabular_directory):
             print(f"TabularAutoML directory already exists at {self.tabular_directory}")
@@ -199,26 +198,56 @@ class TabularAutoML:
         self.tabular_log_directory_path = os.path.join(self.tabular_directory, 'Log')
         os.makedirs(self.tabular_log_directory_path, exist_ok=True)
 
-    def train(self, clean_data=False):
+        if logger is None:
+            self.logger = Logger(log_project_name="Tabular AutoML", log_directory_path=self.tabular_log_directory_path)
+        else:
+            self.logger = logger
+        self.logger.welcome_log("Tabular AutoML")
 
-        all_predictions_dictionary = dict()
-        all_predictions_dictionary['AutoGluon'] = self.autogluon_automl()
+    def train(self, clean_data=False):
+        save_data_object = SaveData(self.saved_models_directory_path)
+        pickle_file_name = os.path.join(self.saved_models_directory_path, 'all_predictions_dictionary.pkl')
+
+        if os.path.isfile(pickle_file_name):
+            all_predictions_dictionary = load_from_pickle(pickle_file_name)
+            print(all_predictions_dictionary)
+        else:
+            all_predictions_dictionary = dict()
         if clean_data:
-            all_predictions_dictionary['AutoKeras'] = self.autokeras_automl()
-            all_predictions_dictionary['TPOT'] = self.tpot_automl()
-        all_predictions_dictionary['AutoSklearn'] = self.autosklearn_automl()
-        all_predictions_dictionary['PyCaret'] = self.pycaret_automl()
-        all_predictions_dictionary['ml_jar_automl'] = self.ml_jar_automl()
-        all_predictions_dictionary['H2O'] = self.h2o_automl()
-        self.logger.info(f"all_predictions_dictionary: {all_predictions_dictionary}")
-        write_json_file(os.path.join(self.saved_models_directory_path, 'all_predictions_dictionary.json'))
+            if 'AutoKeras' not in all_predictions_dictionary:
+                all_predictions_dictionary['AutoKeras'] = self.autokeras_automl()
+                self.logger.info(f"all_predictions_dictionary: {all_predictions_dictionary}")
+                save_data_object.save(all_predictions_dictionary['AutoKeras'], 'AutoKeras')
+
+            if 'TPOT' not in all_predictions_dictionary:
+                all_predictions_dictionary['TPOT'] = self.tpot_automl()
+                save_data_object.save(all_predictions_dictionary['TPOT'], 'TPOT')
+
+        if 'AutoGluon' not in all_predictions_dictionary:
+            all_predictions_dictionary['AutoGluon'] = self.autogluon_automl()
+            self.logger.info(f"all_predictions_dictionary: {all_predictions_dictionary}")
+            save_data_object.save(all_predictions_dictionary['AutoGluon'], 'AutoGluon')
+
+        if 'AutoSklearn' not in all_predictions_dictionary:
+            all_predictions_dictionary['AutoSklearn'] = self.autosklearn_automl()
+            save_data_object.save(all_predictions_dictionary['AutoSklearn'], 'AutoSklearn')
+
+        if 'PyCaret' not in all_predictions_dictionary:
+            all_predictions_dictionary['PyCaret'] = self.pycaret_automl()
+            save_data_object.save(all_predictions_dictionary['PyCaret'], 'PyCaret')
+
+        if 'ml_jar_automl' not in all_predictions_dictionary:
+            all_predictions_dictionary['ml_jar_automl'] = self.ml_jar_automl()
+            save_data_object.save(all_predictions_dictionary['ml_jar_automl'], 'ml_jar_automl')
+
+        if 'H2O' not in all_predictions_dictionary:
+            all_predictions_dictionary['H2O'] = self.h2o_automl()
+            self.logger.info(f"all_predictions_dictionary: {all_predictions_dictionary}")
+            save_data_object.save(all_predictions_dictionary['H2O'], 'H2O')
+
+        save_to_pickle(pickle_file_name, all_predictions_dictionary)
 
         return all_predictions_dictionary
-
-
-
-
-
 
     def autogluon_automl(self, enable_text_special_features=False,
                          enable_text_ngram_features=False,

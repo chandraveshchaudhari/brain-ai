@@ -2,8 +2,10 @@
 import json
 import logging
 import os
+import pickle
 from typing import Any
 
+import numpy as np
 import pandas as pd
 
 
@@ -104,6 +106,24 @@ class DataHandler:
         return self.data
 
 
+class SaveData:
+    def __init__(self, save_directory_path=os.getcwd()):
+        self.save_directory_path = save_directory_path
+
+    def save(self, data, data_name):
+        if isinstance(data, np.ndarray):
+            data = pd.DataFrame(data)
+            file_name = f"{data_name}.csv"
+            file_path = os.path.join(self.save_directory_path, file_name)
+            data.to_csv(file_path)
+        elif type(data) is pd.DataFrame:
+            file_name = f"{data_name}.csv"
+            file_path = os.path.join(self.save_directory_path, file_name)
+            data.to_csv(file_path)
+        else:
+            save_to_pickle(os.path.join(self.save_directory_path, f"{data_name}.pkl"), data)
+
+
 class DataTypeInterchange:
     """Using this class we can interchange the data type from one to another.(dict "records", dataframe)"""
 
@@ -129,6 +149,8 @@ class DataTypeInterchange:
 def first_valid_pandas_column_data(dataframe, column):
     valid_index = dataframe[column].first_valid_index()
     return dataframe[column][valid_index]
+
+
 # end
 
 
@@ -165,11 +187,6 @@ def create_directories_from_path(path):
         os.makedirs(dir_path)
 
 
-class DatasetCreator:
-    # creates the dataset by running models on the data
-    pass
-
-
 class DataPaths:
     def __init__(self, config_location=None):
         self.config_location = config_location
@@ -197,3 +214,24 @@ def create_directory(directory_name):
     """Creates a directory if it does not exist."""
     if not os.path.exists(directory_name):
         os.mkdir(directory_name)
+
+
+def save_to_pickle(file_name, data):
+    try:
+        with open(file_name, 'wb') as file:
+            pickle.dump(data, file)
+        print(f'Data saved to {file_name}')
+    except Exception as e:
+        print(f'Error saving data to {file_name}: {str(e)}')
+
+
+# Function to load a Python object from a pickle file
+def load_from_pickle(file_name):
+    try:
+        with open(file_name, 'rb') as file:
+            loaded_data = pickle.load(file)
+        print(f'Data loaded from {file_name}')
+        return loaded_data
+    except Exception as e:
+        print(f'Error loading data from {file_name}: {str(e)}')
+        return None

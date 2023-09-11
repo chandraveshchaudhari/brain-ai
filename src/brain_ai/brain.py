@@ -9,7 +9,7 @@ from brain_ai.utilities.log_handling import Logger
 
 
 class Brain(Memory):
-    def __init__(self, memory_directory_path=os.getcwd(), *args, **kwargs):
+    def __init__(self, memory_directory_path=None, *args, **kwargs):
         super().__init__(memory_directory_path)
         self.merged_dataset_path = None
         self.args = args
@@ -56,11 +56,16 @@ class Brain(Memory):
 
     def train_tabular_ai(self):
         from brain_ai.model_zoo.tabular_data_ai.AutoML import TabularAutoML
+        tabular_dataset = self.configuration['Tabular dataset']['dataset name']
+        tabular_ai = TabularAutoML(tabular_dataset['path'], tabular_dataset['target'],
+                                   split_data_by_column_name_and_value_dict=None, test_size=None,
+                                   logger=self.logger, tabular_directory=self.tabular_saved_model_path)
+        if self.configuration['Tabular dataset']['clean_data']:
+            return tabular_ai.train(clean_data=True)
+        else:
+            return tabular_ai.train()
 
-        tabular_ai = TabularAutoML(self.logger, saved_models_location=self.tabular_saved_model_path,
-                                   tabular_log_directory_path=self.log_directory_path)
 
-#
 # if __name__ == "__main__":
 #     my_brain = Brain("/home/chandravesh/PhDWork/JupyterProjects/brain-ai-jupyter-notebooks/")
 #     my_brain.merge_dataset()

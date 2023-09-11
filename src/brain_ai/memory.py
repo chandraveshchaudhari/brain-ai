@@ -18,13 +18,13 @@ class Memory:
             self.configuration = DataHandler(self.configuration_path).load()
         else:
             self.configuration = {'metrics path': os.path.join(self.memory_directory_path, "metrics"),
-                                  "datasets": [
+                                  "datasets":
                                       {'Tabular_data': {'path': 'path_of_tabular_data', 'target': 'target_column_name',
                                                         'test_size': 0.2}
-                                       },
-                                      {'Sentiment_data': {'path': 'path_of_tabular_data'}
-                                       }],
-                                  "Underlying_models_train_test_split": 0.2,
+                                          ,
+                                       'Sentiment_data': {'path': 'path_of_tabular_data'}}
+                ,
+                                  "Underlying_models_train_test_split": 0.2
                                   }
         if not os.path.exists(self.configuration['metrics path']):
             os.makedirs(self.configuration['metrics path'])
@@ -64,6 +64,3 @@ class Memory:
 
     def load_model(self, model_name=None, path_to_model=None):
         pass
-
-
-
