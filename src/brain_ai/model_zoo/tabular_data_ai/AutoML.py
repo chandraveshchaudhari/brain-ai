@@ -19,6 +19,8 @@ from sklearn.neighbors import KNeighborsClassifier
 
 from brain_ai.data_processing.feature_engineering import FeatureEngineering
 from brain_ai.data_processing.wrangling import DataClean
+from brain_ai.explainability.comparison import get_additional_metrics, calculate_all_classification_metrics, \
+    convert_metrics_to_record
 from brain_ai.model_zoo.tabular_data_ai.machine_learning_algorithm import get_logistic_regression, \
     get_k_neighbors_classifier, get_random_forest, get_neural_network, get_svm_svc, train_neural_network, \
     sklearn_model_train, KerasNeuralNetwork
@@ -144,19 +146,59 @@ class TabularAIExecutor:
 class TabularAutoML:
     def __init__(self, data, target_data_or_column_name, split_data_by_column_name_and_value_dict=None, test_size=None,
                  logger=None, tabular_directory=os.getcwd()):
+        self.tabular_directory = tabular_directory
+
+        if os.path.exists(self.tabular_directory):
+            print(f"TabularAutoML directory already exists at {self.tabular_directory}")
+
+        self.saved_models_directory_path = os.path.join(self.tabular_directory, 'Tabular AutoML Saved Models')
+        print(f"Tabular AutoML Models will be saved here: {self.saved_models_directory_path}")
+        os.makedirs(self.saved_models_directory_path, exist_ok=True)
+
+        self.tabular_log_directory_path = os.path.join(self.tabular_directory, 'Log')
+        print(f"Tabular AutoML Logs will be saved here: {self.tabular_log_directory_path}")
+        os.makedirs(self.tabular_log_directory_path, exist_ok=True)
+
+        if logger is None:
+            self.logger = Logger(log_project_name="Tabular AutoML", log_directory_path=self.tabular_log_directory_path)
+        else:
+            self.logger = logger
+        self.logger.welcome_log("Tabular AutoML")
+
+        self.prediction_data_directory_path = os.path.join(self.tabular_directory, 'Prediction Data')
+        os.makedirs(self.prediction_data_directory_path, exist_ok=True)
+        self.prediction_dictionary_file_path = os.path.join(self.prediction_data_directory_path,
+                                                            'prediction_dictionary.json')
+        self.logger.info(f"Predicted Data will be saved here: {self.prediction_data_directory_path}")
+        if os.path.exists(self.prediction_dictionary_file_path):
+            self.logger.info(f"Prediction Data file already exists at {self.prediction_dictionary_file_path}")
+            self.prediction_dictionary = DataHandler(self.prediction_dictionary_file_path).load()
+            self.logger.info(f"Prediction Data file loaded from {self.prediction_dictionary_file_path} and contains"
+                             f" {self.prediction_dictionary}.")
+        else:
+            self.logger.info(f"Prediction Data file not found at {self.prediction_dictionary_file_path}. Creating a "
+                             f"new one.")
+            self.prediction_dictionary = dict()
 
         if type(data) is str:
+            self.logger.info(f"Loading data from {data}")
             data = DataHandler(data).dataframe()
             if type(data) is not pd.DataFrame:
                 raise TypeError("Data must be pandas DataFrame")
 
         if type(target_data_or_column_name) is str:
+            self.logger.info(f"target column is {target_data_or_column_name}")
+
             self.target_column_name = target_data_or_column_name
             self.complete_data = data.copy()
             self.target_data = data[self.target_column_name]
             self.data_without_target = data.drop(columns=self.target_column_name)
         else:
+            self.logger.info(f"target data is provided directly: {len(target_data_or_column_name)}")
+
             self.target_column_name = target_data_or_column_name.columns[0]
+
+            self.logger.info(f"target column is {self.target_column_name}")
             self.data_without_target = data.copy()
             self.target_data = target_data_or_column_name
             self.complete_data = pd.concat([self.data_without_target, self.target_data], axis=1)
@@ -168,6 +210,8 @@ class TabularAutoML:
                              "you can mention test_size as 0.33 for 33% test data.")
 
         if test_size is not None:
+            print(f"test_size is {test_size}")
+            self.logger.info(f"test_size is {test_size}")
             self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(self.data_without_target,
                                                                                     self.target_data,
                                                                                     test_size=test_size,
@@ -176,78 +220,77 @@ class TabularAutoML:
             self.testing_data = pd.concat([self.x_test, self.y_test], axis=1)
 
         if split_data_by_column_name_and_value_dict is not None:
+            print(f"split_data_by_column_name_and_value_dict is {split_data_by_column_name_and_value_dict}")
+            self.logger.info(f"split_data_by_column_name_and_value_dict is {split_data_by_column_name_and_value_dict}")
+
             self.training_data = self.complete_data.loc[
                 self.complete_data[split_data_by_column_name_and_value_dict.keys()[0]] <
                 split_data_by_column_name_and_value_dict.values()[0]]
             self.testing_data = self.complete_data.loc[
                 self.complete_data[split_data_by_column_name_and_value_dict.keys()[0]] >=
                 split_data_by_column_name_and_value_dict.values()[0]]
+            self.logger.info(f"training data = data[{split_data_by_column_name_and_value_dict.keys()[0]}] < "
+                             f"{split_data_by_column_name_and_value_dict.values()[0]}")
+            self.logger.info(f"testing data = data[{split_data_by_column_name_and_value_dict.keys()[0]}] >= "
+                             f"{split_data_by_column_name_and_value_dict.values()[0]}")
+
             self.y_train = self.training_data[target_data_or_column_name]
             self.x_train = self.training_data.drop(columns=target_data_or_column_name)
             self.y_test = self.testing_data[target_data_or_column_name]
             self.x_test = self.testing_data.drop(columns=target_data_or_column_name)
 
-        self.tabular_directory = tabular_directory
+    def train_predict(self, clean_data=False):
 
-        if os.path.exists(self.tabular_directory):
-            print(f"TabularAutoML directory already exists at {self.tabular_directory}")
-
-        self.saved_models_directory_path = os.path.join(self.tabular_directory, 'Tabular AutoML Saved Models')
-        os.makedirs(self.saved_models_directory_path, exist_ok=True)
-
-        self.tabular_log_directory_path = os.path.join(self.tabular_directory, 'Log')
-        os.makedirs(self.tabular_log_directory_path, exist_ok=True)
-
-        if logger is None:
-            self.logger = Logger(log_project_name="Tabular AutoML", log_directory_path=self.tabular_log_directory_path)
-        else:
-            self.logger = logger
-        self.logger.welcome_log("Tabular AutoML")
-
-    def train(self, clean_data=False):
-        save_data_object = SaveData(self.saved_models_directory_path)
-        pickle_file_name = os.path.join(self.saved_models_directory_path, 'all_predictions_dictionary.pkl')
-
-        if os.path.isfile(pickle_file_name):
-            all_predictions_dictionary = load_from_pickle(pickle_file_name)
-            print(all_predictions_dictionary)
-        else:
-            all_predictions_dictionary = dict()
         if clean_data:
-            if 'AutoKeras' not in all_predictions_dictionary:
-                all_predictions_dictionary['AutoKeras'] = self.autokeras_automl()
-                self.logger.info(f"all_predictions_dictionary: {all_predictions_dictionary}")
-                save_data_object.save(all_predictions_dictionary['AutoKeras'], 'AutoKeras')
+            print("clean data flag is True!")
+            self.logger.info("the data is cleaned so following models will also be trained: 'Auto Keras Tabular' and "
+                             "'TPOT Tabular'")
 
-            if 'TPOT' not in all_predictions_dictionary:
-                all_predictions_dictionary['TPOT'] = self.tpot_automl()
-                save_data_object.save(all_predictions_dictionary['TPOT'], 'TPOT')
+            if 'Auto Keras Tabular' in self.prediction_dictionary:
+                self.logger.info("Auto Keras Tabular is already trained. Skipping...")
+            else:
+                print("training Auto Keras Tabular")
+                self.autokeras_automl()
 
-        if 'AutoGluon' not in all_predictions_dictionary:
-            all_predictions_dictionary['AutoGluon'] = self.autogluon_automl()
-            self.logger.info(f"all_predictions_dictionary: {all_predictions_dictionary}")
-            save_data_object.save(all_predictions_dictionary['AutoGluon'], 'AutoGluon')
+            if 'TPOT Tabular' in self.prediction_dictionary:
+                self.logger.info("TPOT Tabular is already trained. Skipping...")
+            else:
+                print("training TPOT Tabular")
+                self.tpot_automl()
 
-        if 'AutoSklearn' not in all_predictions_dictionary:
-            all_predictions_dictionary['AutoSklearn'] = self.autosklearn_automl()
-            save_data_object.save(all_predictions_dictionary['AutoSklearn'], 'AutoSklearn')
+        if 'AutoGluon Tabular' in self.prediction_dictionary:
+            self.logger.info("AutoGluon Tabular is already trained. Skipping...")
+        else:
+            print("training AutoGluon Tabular")
+            self.autogluon_automl()
 
-        if 'PyCaret' not in all_predictions_dictionary:
-            all_predictions_dictionary['PyCaret'] = self.pycaret_automl()
-            save_data_object.save(all_predictions_dictionary['PyCaret'], 'PyCaret')
+        if 'AutoSklearn Tabular' in self.prediction_dictionary:
+            self.logger.info("AutoSklearn Tabular is already trained. Skipping...")
+        else:
+            print("training AutoSklearn Tabular")
+            self.autosklearn_automl()
 
-        if 'ml_jar_automl' not in all_predictions_dictionary:
-            all_predictions_dictionary['ml_jar_automl'] = self.ml_jar_automl()
-            save_data_object.save(all_predictions_dictionary['ml_jar_automl'], 'ml_jar_automl')
+        if 'PyCaret Tabular' in self.prediction_dictionary:
+            self.logger.info("PyCaret Tabular is already trained. Skipping...")
+        else:
+            print("training PyCaret Tabular")
+            self.pycaret_automl()
 
-        if 'H2O' not in all_predictions_dictionary:
-            all_predictions_dictionary['H2O'] = self.h2o_automl()
-            self.logger.info(f"all_predictions_dictionary: {all_predictions_dictionary}")
-            save_data_object.save(all_predictions_dictionary['H2O'], 'H2O')
+        if 'ML Jar Tabular' in self.prediction_dictionary:
+            self.logger.info("ML Jar Tabular is already trained. Skipping...")
+        else:
+            print("training ML Jar Tabular")
+            self.ml_jar_automl()
 
-        save_to_pickle(pickle_file_name, all_predictions_dictionary)
+        if 'H2O Tabular' in self.prediction_dictionary:
+            self.logger.info("H2O Tabular is already trained. Skipping...")
+        else:
+            print("training H2O Tabular")
+            self.h2o_automl()
 
-        return all_predictions_dictionary
+        self.logger.info(f"Trained models are saved at {self.saved_models_directory_path} and "
+                         f"predictions are saved at {self.prediction_data_directory_path}.")
+        return True
 
     def autogluon_automl(self, enable_text_special_features=False,
                          enable_text_ngram_features=False,
@@ -256,6 +299,7 @@ class TabularAutoML:
 
         from autogluon.tabular import TabularPredictor
         from autogluon.features.generators import AutoMLPipelineFeatureGenerator
+        self.logger.welcome_log("AutoGluon Tabular")
 
         package_name = 'AutoGluon Tabular'
         saved_model_location = os.path.join(self.saved_models_directory_path, f'{package_name} Saved Models')
@@ -264,6 +308,8 @@ class TabularAutoML:
                                                 f'{package_name} Logs')
         os.makedirs(tabular_auto_ml_log_path, exist_ok=True)
 
+        self.logger.info(f"{package_name} Models will be saved here: {saved_model_location}"
+                         f" and logs will be saved here: {tabular_auto_ml_log_path}")
         file_tabular_auto_ml_log_path = os.path.join(tabular_auto_ml_log_path, f'{package_name}.log')
 
         custom_feature_generator = AutoMLPipelineFeatureGenerator(
@@ -272,18 +318,34 @@ class TabularAutoML:
             enable_raw_text_features=enable_raw_text_features,
             enable_vision_features=enable_vision_features)
 
+        self.logger.info(f"TabularPredictor(label={self.target_column_name}, problem_type='binary', log_to_file=True,"
+                         f"log_file_path={file_tabular_auto_ml_log_path},"
+                         f"path={saved_model_location}).fit(self.training_data, presets='best_quality',"
+                         "feature_generator=AutoMLPipelineFeatureGenerator("
+                         f"enable_text_special_features={enable_text_special_features},"
+                         f"enable_text_ngram_features={enable_text_ngram_features},"
+                         f"enable_raw_text_features={enable_raw_text_features},"
+                         f"enable_vision_features={enable_vision_features}))")
+
         predictor = TabularPredictor(label=self.target_column_name, problem_type='binary', log_to_file=True,
                                      log_file_path=file_tabular_auto_ml_log_path,
                                      path=saved_model_location).fit(self.training_data, presets='best_quality',
                                                                     feature_generator=custom_feature_generator
                                                                     )
+
         predictor.leaderboard().to_csv(os.path.join(saved_model_location, 'leaderboard.csv'))
+        self.logger.info(f"Leaderboard of {package_name} is saved at {saved_model_location}.")
+
         y_pred = predictor.predict_multi(self.x_test)
+
+        for model_name, predictions in y_pred.items():
+            self.save_details(package_name, model_name, predictions)
 
         return y_pred
 
     def autokeras_automl(self, autokeras_epochs=100, autokeras_max_trials=10):
         package_name = 'Auto Keras Tabular'
+        self.logger.welcome_log(package_name)
 
         saved_model_location = os.path.join(self.saved_models_directory_path, f'{package_name} Saved Models')
         os.makedirs(saved_model_location, exist_ok=True)
@@ -292,7 +354,8 @@ class TabularAutoML:
 
         import tensorflow as tf
         import autokeras as ak
-
+        self.logger.info(
+            f"clf = ak.StructuredDataClassifier(max_trials={autokeras_max_trials}, directory={saved_model_location})")
         # Initialize the structured data classifier.
         clf = ak.StructuredDataClassifier(max_trials=autokeras_max_trials, directory=saved_model_location
                                           )  # It tries 3 different models.
@@ -308,6 +371,11 @@ class TabularAutoML:
         )
         # Export as a Keras Model.
         model = clf.export_model()
+        try:
+            print(model.summary())
+            self.logger.info(model.summary())
+        except Exception:
+            self.logger.error("Failed to get summary of the model.")
         self.logger.info(f"Exported the {package_name} model of type {type(model)}.")
 
         try:
@@ -321,10 +389,15 @@ class TabularAutoML:
                 self.logger.error(f"Failed to save the {package_name} model.")
 
         y_pred = clf.predict(self.x_test)
+        y_pred_df = pd.DataFrame(y_pred)
+
+        self.save_details(package_name, 'AutoKeras Model', y_pred_df)
+
         return y_pred
 
     def tpot_automl(self):
         package_name = 'TPOT Tabular'
+        self.logger.welcome_log(package_name)
 
         saved_model_location = os.path.join(self.saved_models_directory_path, f'{package_name} Saved Models')
         os.makedirs(saved_model_location, exist_ok=True)
@@ -333,75 +406,100 @@ class TabularAutoML:
 
         from tpot import TPOTClassifier
 
+        self.logger.info("clf = TPOTClassifier(generations=5, population_size=50, verbosity=2)")
         clf = TPOTClassifier(generations=5, population_size=50, verbosity=2)
         clf.fit(self.x_train, self.y_train)
 
         tpot_y_pred = clf.predict(self.x_test)
+        tpot_y_pred_df = pd.DataFrame(tpot_y_pred)
+
+        self.save_details(package_name, 'tpot_y_pred', tpot_y_pred_df)
         clf.export(os.path.join(saved_model_location, 'pipeline.py'))
 
+        self.logger.info("nn_clf = TPOTClassifier(config_dict='TPOT NN', "
+                         "template='Selector-Transformer-PytorchLRClassifier',"
+                         "verbosity=2, population_size=10, generations=10)")
         nn_clf = TPOTClassifier(config_dict='TPOT NN', template='Selector-Transformer-PytorchLRClassifier',
                                 verbosity=2, population_size=10, generations=10)
         nn_clf.fit(self.x_train, self.y_train)
         nn_tpot_y_pred = nn_clf.predict(self.x_test)
+        nn_tpot_y_pred_df = pd.DataFrame(nn_tpot_y_pred)
         nn_clf.export(os.path.join(saved_model_location, 'NN_pipeline.py'))
+
+        self.save_details(package_name, 'nn_tpot_y_pred', nn_tpot_y_pred_df)
         return {'tpot_y_pred': tpot_y_pred, 'nn_tpot_y_pred': nn_tpot_y_pred}
 
     def autosklearn_automl(self, time_allotted_for_this_task=7200):
         package_name = 'AutoSklearn Tabular'
+        self.logger.welcome_log(package_name)
 
         saved_model_location = os.path.join(self.saved_models_directory_path, f'{package_name} Saved Models')
-        os.makedirs(saved_model_location, exist_ok=True)
 
         self.logger.info(f"{package_name} Models will be saved here: {saved_model_location}")
 
         import autosklearn.classification
 
+        self.logger.info(f"clf = autosklearn.classification.AutoSklearnClassifier("
+                         f"time_left_for_this_task={time_allotted_for_this_task},"
+                         f"tmp_folder={saved_model_location},"
+                         f"delete_tmp_folder_after_terminate=False, )")
         clf = autosklearn.classification.AutoSklearnClassifier(time_left_for_this_task=time_allotted_for_this_task,
                                                                tmp_folder=saved_model_location,
                                                                delete_tmp_folder_after_terminate=False, )
         clf.fit(self.x_train, self.y_train)
         y_pred = clf.predict(self.x_test)
+        y_pred_df = pd.DataFrame(y_pred)
         leader_board = clf.leaderboard()
         if leader_board is pd.DataFrame:
             leader_board.to_csv(os.path.join(saved_model_location, 'leaderboard.csv'))
+            self.logger.info(f"Leaderboard of {package_name} is saved at {saved_model_location}.")
         else:
+            self.logger.info(f"Leaderboard of {package_name} is not saved as it is not a DataFrame.")
             self.logger.info(f"Leaderboard: {leader_board}")
 
         ensemble_dict = clf.show_models()
+
         try:
+            self.logger.info(f"Ensemble Dict: {ensemble_dict}"
+                             f"Saving the {package_name} model to {saved_model_location}.")
             write_json_file(os.path.join(saved_model_location, 'ensemble_dict.json'), ensemble_dict)
         except Exception:
             self.logger.info(f"Failed to save the {ensemble_dict} model.")
 
+        self.save_details(package_name, 'Auto sklearn model', y_pred_df)
         return y_pred
 
     def pycaret_automl(self):
         package_name = 'PyCaret Tabular'
+        self.logger.welcome_log(package_name)
 
         saved_model_location = os.path.join(self.saved_models_directory_path, f'{package_name} Saved Models')
         os.makedirs(saved_model_location, exist_ok=True)
 
         self.logger.info(f"{package_name} Models will be saved here: {saved_model_location}")
 
-        import pycaret
-
         from pycaret.classification import ClassificationExperiment
+
+        self.logger.info(f"clf = ClassificationExperiment()"
+                         f"clf.setup(self.training_data, target=self.target_column_name, session_id=123)")
         clf = ClassificationExperiment()
         clf.setup(self.training_data, target=self.target_column_name, session_id=123)
         best_model = clf.compare_models(n_select=16)
-        self.logger.info(f"Models: {best_model}")
+        self.logger.info(f"Models: {type(best_model).__name__}")
 
         y_pred_dictionary = dict()
         for model in best_model:
             predictions = clf.predict_model(model, data=self.x_test)
-            predictions.to_csv(os.path.join(saved_model_location, f'{model}.csv'))
-            y_pred_dictionary[model] = predictions['prediction_label']
+            model_name = type(model).__name__
+            y_pred_df = predictions[['prediction_label']]
+            self.save_details(package_name, model_name, y_pred_df)
 
         clf.save_model(best_model[0], os.path.join(saved_model_location, 'PyCaret Pipeline'))
         return y_pred_dictionary
 
     def ml_jar_automl(self, mljar_total_time_limit=7200):
         package_name = 'ML Jar Tabular'
+        self.logger.welcome_log(package_name)
 
         saved_model_location = os.path.join(self.saved_models_directory_path, f'{package_name} Saved Models')
         os.makedirs(saved_model_location, exist_ok=True)
@@ -411,21 +509,32 @@ class TabularAutoML:
         # mljar-supervised package
         from supervised.automl import AutoML
 
+        self.logger.info(f"automl = AutoML(mode='Perform', total_time_limit={mljar_total_time_limit},"
+                         f"ml_task='binary_classification', golden_features=False, features_selection=False,"
+                         f"results_path={saved_model_location})")
         # train models with AutoML
         automl = AutoML(mode="Perform", total_time_limit=mljar_total_time_limit, ml_task='binary_classification',
                         golden_features=False, features_selection=False, results_path=saved_model_location)
+
         automl.fit(self.x_train, self.y_train)
 
         # compute the accuracy on test data
         predictions = automl.predict(self.x_test)
+        predictions_df = pd.DataFrame(predictions)
+
         predictions_with_probability = automl.predict_all(self.x_test)
+        self.logger.info(f"Predictions with probability: {type(predictions_with_probability)}")
         if predictions_with_probability is pd.DataFrame:
+            self.logger.info(f"Saving predictions with probability at {saved_model_location}.")
             predictions_with_probability.to_csv(os.path.join(saved_model_location, 'predictions_with_probability.csv'))
+
+        self.save_details(package_name, 'ML Jar Model', predictions_df)
 
         return predictions
 
-    def h2o_automl(self, h2o_max_runtime_secs=7200):
+    def h2o_automl(self):
         package_name = 'H2O Tabular'
+        self.logger.welcome_log(package_name)
 
         saved_model_location = os.path.join(self.saved_models_directory_path, f'{package_name} Saved Models')
         os.makedirs(saved_model_location, exist_ok=True)
@@ -436,19 +545,21 @@ class TabularAutoML:
         h2o.init()
 
         train_h2o = h2o.H2OFrame(self.training_data)
-        x = train_h2o.columns
         y = self.target_column_name
+        # For binary classification, response should be a factor
+        train_h2o[y] = train_h2o[y].asfactor()
+
+        x = train_h2o.columns
         x.remove(y)
 
-        # For binary classification, response should be a factor
-        self.training_data[y] = train_h2o[y].asfactor()
+        self.logger.info(f"aml = H2OAutoML(seed=1)"
+                         f"aml.train(x=x, y=y, training_frame=train_h2o)")
 
         # Run AutoML for 20 base models
-        aml = H2OAutoML(max_models=2, seed=1)
+        aml = H2OAutoML(seed=1)
         aml.train(x=x, y=y, training_frame=train_h2o)
 
         # View the AutoML Leaderboard
-        y_pred_dictionary = dict()
         lb = aml.leaderboard
         if lb is pd.DataFrame:
             lb.to_csv(os.path.join(saved_model_location, 'leaderboard.csv'))
@@ -458,13 +569,17 @@ class TabularAutoML:
             except Exception:
                 self.logger.info(f"Could not provide Leaderboard in log file.")
 
-        for model_id in lb['model_id']:
-            model = h2o.get_model(model_id)
-            y_pred = model.predict(h2o.H2OFrame(self.x_test))
-            h2o.save_model(model=model, path=saved_model_location, force=True)
-            y_pred_dictionary[model_id] = y_pred
+        model_ids = lb['model_id'].as_data_frame()['model_id'].tolist()
 
-        return y_pred_dictionary
+        for model_id in model_ids:
+            model = h2o.get_model(str(model_id))
+            y_pred = model.predict(h2o.H2OFrame(self.x_test))
+            y_pred_df = y_pred.as_data_frame()
+
+            h2o.save_model(model=model, path=saved_model_location, force=True)
+            self.save_details(package_name, model_id, y_pred_df)
+
+        return
 
     def predict(self):
         pass
@@ -478,5 +593,33 @@ class TabularAutoML:
     def evaluate(self):
         pass
 
-    def compare(self):
-        pass
+    def performance_metrics(self):
+        record_list = []
+        for model_name, path in self.prediction_dictionary.items():
+            if path is True:
+                continue
+            y_pred = pd.read_csv(path, low_memory=False)
+            metric_generator = calculate_all_classification_metrics(self.y_test, y_pred)
+            metric_generator_record = convert_metrics_to_record(metric_generator)
+            model_metrics = {'model_name': model_name, **metric_generator_record}
+            record_list.append(model_metrics)
+
+        return pd.DataFrame(record_list)
+
+    def save_performance_metrics(self, path=None):
+        if path:
+            self.performance_metrics().to_csv(path)
+        else:
+            self.performance_metrics().to_csv(os.path.join(self.saved_models_directory_path,
+                                                           'performance_metrics.csv'))
+
+    def save_details(self, automl_name, model_name, predictions):
+        prediction_path = os.path.join(self.prediction_data_directory_path, f'{model_name}.csv')
+        self.prediction_dictionary[automl_name] = True
+        self.prediction_dictionary[model_name] = prediction_path
+        predictions.to_csv(prediction_path, index=False)
+        self.logger.info(f"Saved {model_name} predictions of {automl_name} at {prediction_path}.")
+        write_json_file(self.prediction_dictionary_file_path,
+                        self.prediction_dictionary)
+        self.logger.info(f"Saved prediction dictionary with {model_name} predictions"
+                         f" at {self.prediction_dictionary_file_path}.")

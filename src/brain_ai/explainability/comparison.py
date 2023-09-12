@@ -6,7 +6,180 @@ from matplotlib import pyplot as plt
 from sklearn.metrics import confusion_matrix, precision_score, accuracy_score, recall_score, mean_squared_error, \
     r2_score
 
-# todo: from supervised.utils.additional_metrics import AdditionalMetrics
+from supervised.utils.additional_metrics import AdditionalMetrics
+
+
+from sklearn.metrics import precision_recall_curve, roc_curve, class_likelihood_ratios, det_curve
+from sklearn.metrics import balanced_accuracy_score, cohen_kappa_score, confusion_matrix
+from sklearn.metrics import hinge_loss, matthews_corrcoef, roc_auc_score, top_k_accuracy_score
+from sklearn.metrics import accuracy_score, classification_report, f1_score, fbeta_score
+from sklearn.metrics import hamming_loss, jaccard_score, log_loss, multilabel_confusion_matrix
+from sklearn.metrics import precision_recall_fscore_support, precision_score, recall_score
+from sklearn.metrics import zero_one_loss, average_precision_score
+
+
+def calculate_all_classification_metrics(y_true, y_pred, y_scores=None, pos_label=None):
+    metrics_dict = {}
+
+    # Precision-Recall Curve
+    if y_scores is not None:
+        precision, recall, _ = precision_recall_curve(y_true, y_scores, pos_label=pos_label)
+        metrics_dict['Precision-Recall Curve'] = {'Precision': precision, 'Recall': recall}
+
+        fpr, tpr, _ = roc_curve(y_true, y_scores, pos_label=pos_label)
+        metrics_dict['ROC Curve'] = {'FPR': fpr, 'TPR': tpr}
+
+        # DET Curve (Binary Classification)
+        if len(set(y_true)) == 2:
+            fpr_det, fnr_det, _ = det_curve(y_true, y_scores, pos_label=pos_label)
+            metrics_dict['DET Curve'] = {'FPR_DET': fpr_det, 'FNR_DET': fnr_det}
+
+        # Hinge Loss (Binary Classification)
+            hinge_loss_val = hinge_loss(y_true, y_scores)
+            metrics_dict['Hinge Loss'] = hinge_loss_val
+
+
+            top_k_accuracy = top_k_accuracy_score(y_true, y_scores)
+            metrics_dict['Top-k Accuracy'] = top_k_accuracy
+
+                # Log Loss (Binary Classification)
+            log_loss_val = log_loss(y_true, y_scores)
+            metrics_dict['Log Loss'] = log_loss_val
+
+            # ROC AUC Score (Multiclass Classification)
+            roc_auc = roc_auc_score(y_true, y_scores, average='macro')
+            metrics_dict['ROC AUC Score'] = roc_auc
+            # Average Precision Score (Multiclass Classification)
+            avg_precision = average_precision_score(y_true, y_scores, average='macro')
+            metrics_dict['Average Precision Score'] = avg_precision
+
+        # ROC AUC Score
+
+        roc_auc = roc_auc_score(y_true, y_scores)
+        metrics_dict['ROC AUC Score'] = roc_auc
+
+
+
+    # Class Likelihood Ratios (Binary Classification)
+    if len(set(y_true)) == 2:
+        lr_pos, lr_neg = class_likelihood_ratios(y_true, y_pred)
+        metrics_dict['Class Likelihood Ratios'] = {'LR+': lr_pos, 'LR-': lr_neg}
+
+
+
+    # Balanced Accuracy
+    metrics_dict['Balanced Accuracy'] = balanced_accuracy_score(y_true, y_pred)
+
+    # Cohen's Kappa
+    metrics_dict["Cohen's Kappa"] = cohen_kappa_score(y_true, y_pred)
+
+    # Confusion Matrix
+    metrics_dict['Confusion Matrix'] = confusion_matrix(y_true, y_pred)
+
+
+
+    # Matthews Correlation Coefficient
+    metrics_dict['Matthews Correlation Coefficient'] = matthews_corrcoef(y_true, y_pred)
+
+
+
+    # Accuracy
+    metrics_dict['Accuracy'] = accuracy_score(y_true, y_pred)
+
+    # Classification Report
+    class_rep = classification_report(y_true, y_pred, output_dict=True)
+    metrics_dict['Classification Report'] = class_rep
+
+    # F1 Score
+    f1 = f1_score(y_true, y_pred)
+    metrics_dict['F1 Score'] = f1
+
+    # F-beta Score
+    beta = 1  # You can change the beta value as needed
+    fbeta = fbeta_score(y_true, y_pred, beta=beta)
+    metrics_dict[f'F-{beta} Score'] = fbeta
+
+    # Hamming Loss (Multilabel Classification)
+    if len(y_true.shape) > 1 and y_true.shape[1] > 1:
+        hamming_loss_val = hamming_loss(y_true, y_pred)
+        metrics_dict['Hamming Loss'] = hamming_loss_val
+
+    # Jaccard Score (Multilabel Classification)
+    if len(y_true.shape) > 1 and y_true.shape[1] > 1:
+        jaccard = jaccard_score(y_true, y_pred, average='samples')
+        metrics_dict['Jaccard Score'] = jaccard
+
+
+
+    # Multilabel Confusion Matrix (Multilabel Classification)
+    if len(y_true.shape) > 1 and y_true.shape[1] > 1:
+        multilabel_confusion = multilabel_confusion_matrix(y_true, y_pred)
+        metrics_dict['Multilabel Confusion Matrix'] = multilabel_confusion.tolist()
+
+    # Precision, Recall, F1 Score, Support (Multiclass Classification)
+    if len(set(y_true)) > 2:
+        prec_rec_f1_supp = precision_recall_fscore_support(y_true, y_pred, average=None)
+        for i, label in enumerate(set(y_true)):
+            metrics_dict[f'Precision (Class {label})'] = prec_rec_f1_supp[0][i]
+            metrics_dict[f'Recall (Class {label})'] = prec_rec_f1_supp[1][i]
+            metrics_dict[f'F1 Score (Class {label})'] = prec_rec_f1_supp[2][i]
+            metrics_dict[f'Support (Class {label})'] = prec_rec_f1_supp[3][i]
+
+    # Precision Score (Multiclass Classification)
+    if len(set(y_true)) > 2:
+        prec_score = precision_score(y_true, y_pred, average=None)
+        for i, label in enumerate(set(y_true)):
+            metrics_dict[f'Precision (Class {label})'] = prec_score[i]
+
+    # Recall Score (Multiclass Classification)
+    if len(set(y_true)) > 2:
+        rec_score = recall_score(y_true, y_pred, average=None)
+        for i, label in enumerate(set(y_true)):
+            metrics_dict[f'Recall (Class {label})'] = rec_score[i]
+
+
+
+    # Zero-One Loss (Multiclass Classification)
+    if len(set(y_true)) > 2:
+        zero_one_loss_val = zero_one_loss(y_true, y_pred)
+        metrics_dict['Zero-One Loss'] = zero_one_loss_val
+
+    return metrics_dict
+
+
+def confusion_matrix_metric_to_dict(cm):
+    tn, fp, fn, tp = cm.ravel()
+
+    metrics_dict = {
+        'True Positive (TP)': tp,
+        'True Negative (TN)': tn,
+        'False Positive (FP)': fp,
+        'False Negative (FN)': fn
+    }
+
+    return metrics_dict
+
+
+def flatten_dict(d, parent_key='', sep=' '):
+    flattened = {}
+    for k, v in d.items():
+        new_key = f"{parent_key}{sep}{k}" if parent_key else k
+        if isinstance(v, dict):
+            flattened.update(flatten_dict(v, new_key, sep=sep))
+        else:
+            flattened[new_key] = v
+    return flattened
+
+
+def convert_metrics_to_record(metrics_dict):
+    metrics_dict['Confusion Matrix'] = confusion_matrix_metric_to_dict(metrics_dict['Confusion Matrix'])
+
+    metrics_dict = flatten_dict(metrics_dict)
+    return metrics_dict
+
+
+def get_additional_metrics(y_true, y_pred):
+    return AdditionalMetrics().binary_classification(y_true, y_pred)
 
 
 def load_json(json_path):

@@ -13,6 +13,7 @@ class Memory:
 
         if not os.path.exists(self.memory_directory_path):
             os.makedirs(self.memory_directory_path)
+
         self.configuration_path = os.path.join(self.memory_directory_path, "configuration.json")
         if os.path.isfile(self.configuration_path):
             self.configuration = DataHandler(self.configuration_path).load()
@@ -26,6 +27,9 @@ class Memory:
                 ,
                                   "Underlying_models_train_test_split": 0.2
                                   }
+            print(f"Configuration file not found at {self.configuration_path}. Creating a new one.")
+            self.generate_configuration_file(self.configuration_path)
+
         if not os.path.exists(self.configuration['metrics path']):
             os.makedirs(self.configuration['metrics path'])
             self.metrics = dict()

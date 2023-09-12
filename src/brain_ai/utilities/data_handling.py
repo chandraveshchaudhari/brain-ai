@@ -110,18 +110,18 @@ class SaveData:
     def __init__(self, save_directory_path=os.getcwd()):
         self.save_directory_path = save_directory_path
 
-    def save(self, data, data_name):
-        if isinstance(data, np.ndarray):
-            data = pd.DataFrame(data)
-            file_name = f"{data_name}.csv"
-            file_path = os.path.join(self.save_directory_path, file_name)
-            data.to_csv(file_path)
-        elif type(data) is pd.DataFrame:
-            file_name = f"{data_name}.csv"
-            file_path = os.path.join(self.save_directory_path, file_name)
-            data.to_csv(file_path)
-        else:
-            save_to_pickle(os.path.join(self.save_directory_path, f"{data_name}.pkl"), data)
+    def save(self, data, data_name='y_pred'):
+        # if isinstance(data, np.ndarray):
+        #     data = pd.DataFrame(data)
+        #     file_name = f"{data_name}.csv"
+        #     file_path = os.path.join(self.save_directory_path, file_name)
+        #     data.to_csv(file_path)
+        # elif type(data) is pd.DataFrame:
+        #     file_name = f"{data_name}.csv"
+        #     file_path = os.path.join(self.save_directory_path, file_name)
+        #     data.to_csv(file_path)
+        # else:
+        save_to_pickle(os.path.join(self.save_directory_path, f"{data_name}.pkl"), data)
 
 
 class DataTypeInterchange:
