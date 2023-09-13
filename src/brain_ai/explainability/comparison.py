@@ -19,6 +19,7 @@ from sklearn.metrics import zero_one_loss, average_precision_score
 
 
 def calculate_all_classification_metrics(y_true, y_pred, y_scores=None, pos_label=None):
+
     metrics_dict = {}
 
     # Precision-Recall Curve

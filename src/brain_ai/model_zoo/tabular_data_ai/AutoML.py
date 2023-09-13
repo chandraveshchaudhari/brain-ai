@@ -3,6 +3,7 @@ Remember to put distinct name of modules and they should not have same name func
 Try to use absolute import and reduce cyclic imports to avoid errors
 if there are more than one modules then import like this:
 from tabular_data_ai import sample_func
+https://www.automl.org/automl-for-x/tabular-data/
 """
 import logging
 import os
@@ -414,22 +415,24 @@ class TabularAutoML:
         tpot_y_pred_df = pd.DataFrame(tpot_y_pred)
 
         self.save_details(package_name, 'tpot_y_pred', tpot_y_pred_df)
-        clf.export(os.path.join(saved_model_location, 'pipeline.py'))
+        clf.export(os.path.join(saved_model_location, f'{package_name} pipeline.py'))
+        self.logger.info("pipeline.py is saved at {saved_model_location}")
 
         self.logger.info("nn_clf = TPOTClassifier(config_dict='TPOT NN', "
                          "template='Selector-Transformer-PytorchLRClassifier',"
-                         "verbosity=2, population_size=10, generations=10)")
+                         f"verbosity={2}, population_size={10}, generations={10})")
         nn_clf = TPOTClassifier(config_dict='TPOT NN', template='Selector-Transformer-PytorchLRClassifier',
                                 verbosity=2, population_size=10, generations=10)
         nn_clf.fit(self.x_train, self.y_train)
         nn_tpot_y_pred = nn_clf.predict(self.x_test)
         nn_tpot_y_pred_df = pd.DataFrame(nn_tpot_y_pred)
-        nn_clf.export(os.path.join(saved_model_location, 'NN_pipeline.py'))
+        nn_clf.export(os.path.join(saved_model_location, f'{package_name} NN_pipeline.py'))
+        self.logger.info("NN_pipeline.py is saved at {saved_model_location}")
 
         self.save_details(package_name, 'nn_tpot_y_pred', nn_tpot_y_pred_df)
         return {'tpot_y_pred': tpot_y_pred, 'nn_tpot_y_pred': nn_tpot_y_pred}
 
-    def autosklearn_automl(self, time_allotted_for_this_task=7200):
+    def autosklearn_automl(self, time_allotted_for_this_task=14400):
         package_name = 'AutoSklearn Tabular'
         self.logger.welcome_log(package_name)
 
@@ -449,8 +452,10 @@ class TabularAutoML:
         clf.fit(self.x_train, self.y_train)
         y_pred = clf.predict(self.x_test)
         y_pred_df = pd.DataFrame(y_pred)
+        self.save_details(package_name, 'Auto sklearn model', y_pred_df)
+
         leader_board = clf.leaderboard()
-        if leader_board is pd.DataFrame:
+        if type(leader_board) is pd.DataFrame:
             leader_board.to_csv(os.path.join(saved_model_location, 'leaderboard.csv'))
             self.logger.info(f"Leaderboard of {package_name} is saved at {saved_model_location}.")
         else:
@@ -466,7 +471,7 @@ class TabularAutoML:
         except Exception:
             self.logger.info(f"Failed to save the {ensemble_dict} model.")
 
-        self.save_details(package_name, 'Auto sklearn model', y_pred_df)
+
         return y_pred
 
     def pycaret_automl(self):
@@ -494,17 +499,17 @@ class TabularAutoML:
             y_pred_df = predictions[['prediction_label']]
             self.save_details(package_name, model_name, y_pred_df)
 
-        clf.save_model(best_model[0], os.path.join(saved_model_location, 'PyCaret Pipeline'))
+            clf.save_model(model, os.path.join(saved_model_location, f'PyCaret Pipeline {model_name}'))
         return y_pred_dictionary
 
-    def ml_jar_automl(self, mljar_total_time_limit=7200):
+    def ml_jar_automl(self, mljar_total_time_limit=14400):
         package_name = 'ML Jar Tabular'
         self.logger.welcome_log(package_name)
 
         saved_model_location = os.path.join(self.saved_models_directory_path, f'{package_name} Saved Models')
         os.makedirs(saved_model_location, exist_ok=True)
 
-        self.logger.info(f"{package_name} Models will be saved here: {saved_model_location}")
+        self.logger.info(f"{package_name} Models will be automatically save here: {saved_model_location}")
 
         # mljar-supervised package
         from supervised.automl import AutoML
@@ -555,15 +560,15 @@ class TabularAutoML:
         self.logger.info(f"aml = H2OAutoML(seed=1)"
                          f"aml.train(x=x, y=y, training_frame=train_h2o)")
 
-        # Run AutoML for 20 base models
         aml = H2OAutoML(seed=1)
         aml.train(x=x, y=y, training_frame=train_h2o)
 
         # View the AutoML Leaderboard
         lb = aml.leaderboard
-        if lb is pd.DataFrame:
-            lb.to_csv(os.path.join(saved_model_location, 'leaderboard.csv'))
-        else:
+
+        try:
+            lb.as_data_frame().to_csv(os.path.join(saved_model_location, 'leaderboard.csv'))
+        except Exception:
             try:
                 self.logger.info(f"Leaderboard: {lb}")
             except Exception:
@@ -571,27 +576,19 @@ class TabularAutoML:
 
         model_ids = lb['model_id'].as_data_frame()['model_id'].tolist()
 
+        self.logger.info(f"model_ids: {model_ids}")
         for model_id in model_ids:
             model = h2o.get_model(str(model_id))
             y_pred = model.predict(h2o.H2OFrame(self.x_test))
             y_pred_df = y_pred.as_data_frame()
 
             h2o.save_model(model=model, path=saved_model_location, force=True)
+            self.logger.info(f"Saved {model_id} model at {saved_model_location}.")
             self.save_details(package_name, model_id, y_pred_df)
 
-        return
-
-    def predict(self):
-        pass
-
-    def save(self):
-        pass
-
-    def load(self):
-        pass
-
-    def evaluate(self):
-        pass
+    def train_predict_save_metrics(self, clean_data=False):
+        self.train_predict(clean_data=clean_data)
+        self.save_performance_metrics()
 
     def performance_metrics(self):
         record_list = []
@@ -599,6 +596,15 @@ class TabularAutoML:
             if path is True:
                 continue
             y_pred = pd.read_csv(path, low_memory=False)
+
+            if len(y_pred.shape) > 1:
+                y_pred = y_pred.iloc[:, 0]
+            self.logger.info(f"Calculating performance metrics for {model_name} model."
+                             f" y_pred: {y_pred.shape}, y_test: {self.y_test.shape}"
+                             f" y_pred: {y_pred.dtypes}, y_test: {self.y_test.dtypes}"
+                             f" y_pred: {y_pred.head()}, y_test: {self.y_test.head()}"
+                             f" y_pred: {y_pred.tail()}, y_test: {self.y_test.tail()}")
+
             metric_generator = calculate_all_classification_metrics(self.y_test, y_pred)
             metric_generator_record = convert_metrics_to_record(metric_generator)
             model_metrics = {'model_name': model_name, **metric_generator_record}
