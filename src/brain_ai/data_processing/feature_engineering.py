@@ -63,6 +63,19 @@ def engineer_datetime(pandas_datetime_column):
     return pandas_datetime_column
 
 
+def single_engineer_datetime(datetime_str, min_datetime_str):
+    # Convert the datetime string to a datetime object
+    datetime_obj = pd.to_datetime(datetime_str)
+
+    # Get the minimum datetime
+    min_datetime = pd.to_datetime(min_datetime_str)
+
+    # Convert the datetime to a float
+    float_value = (datetime_obj - min_datetime) / np.timedelta64(1, 'D')
+
+    return float_value
+
+
 def date_format_to_numeric_format(date_format, start_date=2006):
     time_config = {"Q1": 0.2, "Q2": 0.4, "Q3": 0.6, "Q4": 0.8, 'Y': 1}
     string_date_format = str(date_format)

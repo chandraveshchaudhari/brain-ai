@@ -225,20 +225,24 @@ class TabularAutoML:
             self.logger.info(f"split_data_by_column_name_and_value_dict is {split_data_by_column_name_and_value_dict}")
 
             self.training_data = self.complete_data.loc[
-                self.complete_data[split_data_by_column_name_and_value_dict.keys()[0]] <
-                split_data_by_column_name_and_value_dict.values()[0]]
+                self.complete_data[list(split_data_by_column_name_and_value_dict.keys())[0]] <
+                list(split_data_by_column_name_and_value_dict.values())[0]]
             self.testing_data = self.complete_data.loc[
-                self.complete_data[split_data_by_column_name_and_value_dict.keys()[0]] >=
-                split_data_by_column_name_and_value_dict.values()[0]]
-            self.logger.info(f"training data = data[{split_data_by_column_name_and_value_dict.keys()[0]}] < "
-                             f"{split_data_by_column_name_and_value_dict.values()[0]}")
-            self.logger.info(f"testing data = data[{split_data_by_column_name_and_value_dict.keys()[0]}] >= "
-                             f"{split_data_by_column_name_and_value_dict.values()[0]}")
+                self.complete_data[list(split_data_by_column_name_and_value_dict.keys())[0]] >=
+                list(split_data_by_column_name_and_value_dict.values())[0]]
+            self.logger.info(f"training data = data[{list(split_data_by_column_name_and_value_dict.keys())[0]}] < "
+                             f"{list(split_data_by_column_name_and_value_dict.values())[0]}")
+            self.logger.info(f"testing data = data[{list(split_data_by_column_name_and_value_dict.keys())[0]}] >= "
+                             f"{list(split_data_by_column_name_and_value_dict.values())[0]}")
 
+            self.logger.info(f"training data shape = {self.training_data.shape}"
+                             f"testing data shape = {self.testing_data.shape}")
             self.y_train = self.training_data[target_data_or_column_name]
             self.x_train = self.training_data.drop(columns=target_data_or_column_name)
             self.y_test = self.testing_data[target_data_or_column_name]
             self.x_test = self.testing_data.drop(columns=target_data_or_column_name)
+            self.logger.info(f"training data shape = {self.x_train.shape} and {self.y_train.shape}"
+                             f"testing data shape = {self.x_test.shape} and {self.y_test.shape}")
 
     def train_predict(self, clean_data=False):
 
@@ -447,7 +451,7 @@ class TabularAutoML:
                          f"tmp_folder={saved_model_location},"
                          f"delete_tmp_folder_after_terminate=False, )")
         clf = autosklearn.classification.AutoSklearnClassifier(time_left_for_this_task=time_allotted_for_this_task,
-                                                               tmp_folder=saved_model_location,
+                                                               tmp_folder=saved_model_location, memory_limit=10000,
                                                                delete_tmp_folder_after_terminate=False, )
         clf.fit(self.x_train, self.y_train)
         y_pred = clf.predict(self.x_test)
@@ -502,7 +506,7 @@ class TabularAutoML:
             clf.save_model(model, os.path.join(saved_model_location, f'PyCaret Pipeline {model_name}'))
         return y_pred_dictionary
 
-    def ml_jar_automl(self, mljar_total_time_limit=14400):
+    def ml_jar_automl(self, mljar_model_time_limit=14400):
         package_name = 'ML Jar Tabular'
         self.logger.welcome_log(package_name)
 
@@ -514,11 +518,11 @@ class TabularAutoML:
         # mljar-supervised package
         from supervised.automl import AutoML
 
-        self.logger.info(f"automl = AutoML(mode='Perform', total_time_limit={mljar_total_time_limit},"
+        self.logger.info(f"automl = AutoML(mode='Perform', total_time_limit={mljar_model_time_limit},"
                          f"ml_task='binary_classification', golden_features=False, features_selection=False,"
                          f"results_path={saved_model_location})")
         # train models with AutoML
-        automl = AutoML(mode="Perform", total_time_limit=mljar_total_time_limit, ml_task='binary_classification',
+        automl = AutoML(mode="Perform", model_time_limit=mljar_model_time_limit, ml_task='binary_classification',
                         golden_features=False, features_selection=False, results_path=saved_model_location)
 
         automl.fit(self.x_train, self.y_train)
