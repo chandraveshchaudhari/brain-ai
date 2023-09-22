@@ -7,6 +7,7 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
+from sklearn.model_selection import train_test_split
 
 
 # Data Handler functions
@@ -179,12 +180,15 @@ def create_file_if_not_present(file_path, file_creation_function):
         file_creation_function(file_path, [])
 
 
-def create_directories_from_path(path):
-    dir_path = os.path.dirname(path)
-    # Check if the path exists
-    if not os.path.exists(dir_path):
-        # Create all directories in the path
-        os.makedirs(dir_path)
+def create_directories_from_path(path, logger=None):
+    """Creates directories from the given path if they do not exist."""
+    if not os.path.exists(path):
+        os.makedirs(path)
+        logger.info(f"Created directory {path}")
+        print(f"Created directory {path}")
+    else:
+        logger.info(f"Directory {path} already exists")
+        print(f"Directory {path} already exists")
 
 
 class DataPaths:
@@ -235,3 +239,68 @@ def load_from_pickle(file_name):
     except Exception as e:
         print(f'Error loading data from {file_name}: {str(e)}')
         return None
+
+
+def load_data_for_auto_ml(data_or_path, target_data_or_column_name, logger=None):
+    if type(data_or_path) is str:
+        logger.info(f"Loading data from {data_or_path}")
+        data = DataHandler(data_or_path).dataframe()
+        if type(data) is not pd.DataFrame:
+            raise TypeError("Data must be pandas DataFrame")
+
+    if type(target_data_or_column_name) is str:
+        logger.info(f"target column is {target_data_or_column_name}")
+
+        target_column_name = target_data_or_column_name
+        complete_data = data_or_path.copy()
+        target_data = data_or_path[target_column_name]
+        data_without_target = data_or_path.drop(columns=target_column_name)
+    else:
+        logger.info(f"target data is provided directly: {len(target_data_or_column_name)}")
+
+        target_column_name = target_data_or_column_name.columns[0]
+
+        logger.info(f"target column is {target_column_name}")
+        data_without_target = data_or_path.copy()
+        target_data = target_data_or_column_name
+        complete_data = pd.concat([data_without_target, target_data], axis=1)
+    return complete_data, target_column_name, data_without_target, target_data
+
+
+def generate_train_test_split(complete_data, target_column_name, data_without_target, target_data,
+                              split_data_by_column_name_and_value_dict=None, test_size=0.33, logger=None):
+    if split_data_by_column_name_and_value_dict:
+        print(f"split_data_by_column_name_and_value_dict is {split_data_by_column_name_and_value_dict}")
+        logger.info(f"split_data_by_column_name_and_value_dict is {split_data_by_column_name_and_value_dict}")
+
+        training_data = complete_data.loc[
+            complete_data[list(split_data_by_column_name_and_value_dict.keys())[0]] <
+            list(split_data_by_column_name_and_value_dict.values())[0]]
+        testing_data = complete_data.loc[
+            complete_data[list(split_data_by_column_name_and_value_dict.keys())[0]] >=
+            list(split_data_by_column_name_and_value_dict.values())[0]]
+        logger.info(f"training data = data[{list(split_data_by_column_name_and_value_dict.keys())[0]}] < "
+                    f"{list(split_data_by_column_name_and_value_dict.values())[0]}")
+        logger.info(f"testing data = data[{list(split_data_by_column_name_and_value_dict.keys())[0]}] >= "
+                    f"{list(split_data_by_column_name_and_value_dict.values())[0]}")
+
+        logger.info(f"training data shape = {training_data.shape}"
+                    f"testing data shape = {testing_data.shape}")
+        y_train = training_data[target_column_name]
+        x_train = training_data.drop(columns=target_column_name)
+        y_test = testing_data[target_column_name]
+        x_test = testing_data.drop(columns=target_column_name)
+        logger.info(f"training data shape = {x_train.shape} and {y_train.shape}"
+                    f"testing data shape = {x_test.shape} and {y_test.shape}")
+    else:
+        print(f"test_size is {test_size}")
+        logger.info(f"test_size is {test_size}")
+        x_train, x_test, y_train, y_test = train_test_split(data_without_target,
+                                                            target_data,
+                                                            test_size=test_size,
+                                                            random_state=42)
+        training_data = pd.concat([x_train, y_train], axis=1)
+        testing_data = pd.concat([x_test, y_test], axis=1)
+
+    return training_data, testing_data, x_train, x_test, y_train, y_test
+

@@ -5,13 +5,12 @@ if there are more than one modules then import like this:
 from tabular_data_ai import sample_func
 https://www.automl.org/automl-for-x/tabular-data/
 """
-import logging
 import os
-import h2o
-from h2o.automl import H2OAutoML
 
+import h2o
 import mlflow
 import pandas as pd
+from h2o.automl import H2OAutoML
 from sklearn import svm
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
@@ -20,12 +19,13 @@ from sklearn.neighbors import KNeighborsClassifier
 
 from brain_ai.data_processing.feature_engineering import FeatureEngineering
 from brain_ai.data_processing.wrangling import DataClean
-from brain_ai.explainability.comparison import get_additional_metrics, calculate_all_classification_metrics, \
+from brain_ai.explainability.comparison import calculate_all_classification_metrics, \
     convert_metrics_to_record
-from brain_ai.model_zoo.tabular_data_ai.machine_learning_algorithm import get_logistic_regression, \
-    get_k_neighbors_classifier, get_random_forest, get_neural_network, get_svm_svc, train_neural_network, \
+from brain_ai.memory import initiate_directory_structure
+from brain_ai.model_zoo.tabular_data_ai.machine_learning_algorithm import train_neural_network, \
     sklearn_model_train, KerasNeuralNetwork
-from brain_ai.utilities.data_handling import DataHandler, write_json_file, SaveData, save_to_pickle, load_from_pickle
+from brain_ai.utilities.data_handling import DataHandler, write_json_file, load_data_for_auto_ml, \
+    generate_train_test_split
 from brain_ai.utilities.log_handling import Logger
 
 
@@ -145,32 +145,31 @@ class TabularAIExecutor:
 
 
 class TabularAutoML:
-    def __init__(self, data, target_data_or_column_name, split_data_by_column_name_and_value_dict=None, test_size=None,
-                 logger=None, tabular_directory=os.getcwd()):
-        self.tabular_directory = tabular_directory
+    def __init__(self, data_or_path, target_data_or_column_name,
+                 split_data_by_column_name_and_value_dict=None, test_size=0.33,
+                 logger=None, tabular_directory=os.getcwd(), project_name="Tabular AutoML"):
 
-        if os.path.exists(self.tabular_directory):
-            print(f"TabularAutoML directory already exists at {self.tabular_directory}")
-
-        self.saved_models_directory_path = os.path.join(self.tabular_directory, 'Tabular AutoML Saved Models')
-        print(f"Tabular AutoML Models will be saved here: {self.saved_models_directory_path}")
-        os.makedirs(self.saved_models_directory_path, exist_ok=True)
-
-        self.tabular_log_directory_path = os.path.join(self.tabular_directory, 'Log')
-        print(f"Tabular AutoML Logs will be saved here: {self.tabular_log_directory_path}")
-        os.makedirs(self.tabular_log_directory_path, exist_ok=True)
+        self.directories_created = initiate_directory_structure(tabular_directory, project_name,
+                                                                logs=True, saved_models=True, predicted_data=True)
+        self.tabular_log_directory_path = self.directories_created[1]
+        self.saved_models_directory_path = self.directories_created[2]
+        self.prediction_data_directory_path = self.directories_created[3]
+        self.generated_data_directory_path = self.directories_created[4]
 
         if logger is None:
-            self.logger = Logger(log_project_name="Tabular AutoML", log_directory_path=self.tabular_log_directory_path)
+            self.logger = Logger(log_project_name=project_name, log_directory_path=self.directories_created[0])
         else:
             self.logger = logger
-        self.logger.welcome_log("Tabular AutoML")
+        self.logger.welcome_log(project_name)
 
-        self.prediction_data_directory_path = os.path.join(self.tabular_directory, 'Prediction Data')
-        os.makedirs(self.prediction_data_directory_path, exist_ok=True)
-        self.prediction_dictionary_file_path = os.path.join(self.prediction_data_directory_path,
+        self.logger.info(f"{project_name} started:"
+                         f"Memory directory path is {self.directories_created[0]}"
+                         f"logs directory path is {self.directories_created[1]}"
+                         f"saved models directory path is {self.directories_created[2]}"
+                         f"predicted data directory path is {self.directories_created[3]}")
+
+        self.prediction_dictionary_file_path = os.path.join(self.directories_created[3],
                                                             'prediction_dictionary.json')
-        self.logger.info(f"Predicted Data will be saved here: {self.prediction_data_directory_path}")
         if os.path.exists(self.prediction_dictionary_file_path):
             self.logger.info(f"Prediction Data file already exists at {self.prediction_dictionary_file_path}")
             self.prediction_dictionary = DataHandler(self.prediction_dictionary_file_path).load()
@@ -181,68 +180,49 @@ class TabularAutoML:
                              f"new one.")
             self.prediction_dictionary = dict()
 
-        if type(data) is str:
-            self.logger.info(f"Loading data from {data}")
-            data = DataHandler(data).dataframe()
-            if type(data) is not pd.DataFrame:
-                raise TypeError("Data must be pandas DataFrame")
+        loaded_data = load_data_for_auto_ml(data_or_path,
+                                            target_data_or_column_name,
+                                            logger=self.logger)
+        self.complete_data, self.target_column_name, self.data_without_target, self.target_data = loaded_data
+        generated_data = generate_train_test_split(self.complete_data,
+                                                   self.target_column_name,
+                                                   self.data_without_target,
+                                                   self.target_data,
+                                                   split_data_by_column_name_and_value_dict=split_data_by_column_name_and_value_dict,
+                                                   test_size=test_size,
+                                                   logger=self.logger)
+        self.training_data, self.testing_data, self.x_train, self.x_test, self.y_train, self.y_test = generated_data
 
-        if type(target_data_or_column_name) is str:
-            self.logger.info(f"target column is {target_data_or_column_name}")
+        # save these dataframes to generated_data_directory_path
+        training_data_path = os.path.join(self.generated_data_directory_path, 'training_data.csv')
+        self.training_data.to_csv(training_data_path, index=False)
+        self.logger.info(f"Training data is saved at {training_data_path}.")
+        testing_data_path = os.path.join(self.generated_data_directory_path, 'testing_data.csv')
+        self.testing_data.to_csv(testing_data_path, index=False)
+        self.logger.info(f"Testing data is saved at {testing_data_path}.")
+        x_train_path = os.path.join(self.generated_data_directory_path, 'x_train.csv')
+        self.x_train.to_csv(x_train_path, index=False)
+        self.logger.info(f"x_train data is saved at {x_train_path}.")
+        x_test_path = os.path.join(self.generated_data_directory_path, 'x_test.csv')
+        self.x_test.to_csv(x_test_path, index=False)
+        self.logger.info(f"x_test data is saved at {x_test_path}.")
+        y_train_path = os.path.join(self.generated_data_directory_path, 'y_train.csv')
+        self.y_train.to_csv(y_train_path, index=False)
+        self.logger.info(f"y_train data is saved at {y_train_path}.")
+        y_test_path = os.path.join(self.generated_data_directory_path, 'y_test.csv')
+        self.y_test.to_csv(y_test_path, index=False)
+        self.logger.info(f"y_test data is saved at {y_test_path}.")
 
-            self.target_column_name = target_data_or_column_name
-            self.complete_data = data.copy()
-            self.target_data = data[self.target_column_name]
-            self.data_without_target = data.drop(columns=self.target_column_name)
-        else:
-            self.logger.info(f"target data is provided directly: {len(target_data_or_column_name)}")
+        self.generated_data_dictionary_path = os.path.join(self.generated_data_directory_path,
+                                                           'generated_data_dictionary.json')
+        generated_data_dictionary = {'training_data': training_data_path,
+                                     'testing_data': testing_data_path,
+                                     'x_train': x_train_path,
+                                     'x_test': x_test_path,
+                                     'y_train': y_train_path,
+                                     'y_test': y_test_path}
 
-            self.target_column_name = target_data_or_column_name.columns[0]
-
-            self.logger.info(f"target column is {self.target_column_name}")
-            self.data_without_target = data.copy()
-            self.target_data = target_data_or_column_name
-            self.complete_data = pd.concat([self.data_without_target, self.target_data], axis=1)
-
-        if split_data_by_column_name_and_value_dict is not None and test_size is not None:
-            raise ValueError("Both split_data_by_column_name_and_value_dict and test_size cannot be used together.")
-        elif split_data_by_column_name_and_value_dict is None and test_size is None:
-            raise ValueError("Either split_data_by_column_name_and_value_dict or test_size must be used."
-                             "you can mention test_size as 0.33 for 33% test data.")
-
-        if test_size is not None:
-            print(f"test_size is {test_size}")
-            self.logger.info(f"test_size is {test_size}")
-            self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(self.data_without_target,
-                                                                                    self.target_data,
-                                                                                    test_size=test_size,
-                                                                                    random_state=42)
-            self.training_data = pd.concat([self.x_train, self.y_train], axis=1)
-            self.testing_data = pd.concat([self.x_test, self.y_test], axis=1)
-
-        if split_data_by_column_name_and_value_dict is not None:
-            print(f"split_data_by_column_name_and_value_dict is {split_data_by_column_name_and_value_dict}")
-            self.logger.info(f"split_data_by_column_name_and_value_dict is {split_data_by_column_name_and_value_dict}")
-
-            self.training_data = self.complete_data.loc[
-                self.complete_data[list(split_data_by_column_name_and_value_dict.keys())[0]] <
-                list(split_data_by_column_name_and_value_dict.values())[0]]
-            self.testing_data = self.complete_data.loc[
-                self.complete_data[list(split_data_by_column_name_and_value_dict.keys())[0]] >=
-                list(split_data_by_column_name_and_value_dict.values())[0]]
-            self.logger.info(f"training data = data[{list(split_data_by_column_name_and_value_dict.keys())[0]}] < "
-                             f"{list(split_data_by_column_name_and_value_dict.values())[0]}")
-            self.logger.info(f"testing data = data[{list(split_data_by_column_name_and_value_dict.keys())[0]}] >= "
-                             f"{list(split_data_by_column_name_and_value_dict.values())[0]}")
-
-            self.logger.info(f"training data shape = {self.training_data.shape}"
-                             f"testing data shape = {self.testing_data.shape}")
-            self.y_train = self.training_data[target_data_or_column_name]
-            self.x_train = self.training_data.drop(columns=target_data_or_column_name)
-            self.y_test = self.testing_data[target_data_or_column_name]
-            self.x_test = self.testing_data.drop(columns=target_data_or_column_name)
-            self.logger.info(f"training data shape = {self.x_train.shape} and {self.y_train.shape}"
-                             f"testing data shape = {self.x_test.shape} and {self.y_test.shape}")
+        write_json_file(self.generated_data_dictionary_path, generated_data_dictionary)
 
     def train_predict(self, clean_data=False):
 
@@ -357,7 +337,6 @@ class TabularAutoML:
 
         self.logger.info(f"{package_name} Models will be saved here: {saved_model_location}")
 
-        import tensorflow as tf
         import autokeras as ak
         self.logger.info(
             f"clf = ak.StructuredDataClassifier(max_trials={autokeras_max_trials}, directory={saved_model_location})")
@@ -475,7 +454,6 @@ class TabularAutoML:
         except Exception:
             self.logger.info(f"Failed to save the {ensemble_dict} model.")
 
-
         return y_pred
 
     def pycaret_automl(self):
@@ -522,7 +500,7 @@ class TabularAutoML:
                          f"ml_task='binary_classification', golden_features=False, features_selection=False,"
                          f"results_path={saved_model_location})")
         # train models with AutoML
-        automl = AutoML(mode="Perform", model_time_limit=mljar_model_time_limit, ml_task='binary_classification',
+        automl = AutoML(mode="Compete", model_time_limit=mljar_model_time_limit, ml_task='binary_classification',
                         golden_features=False, features_selection=False, results_path=saved_model_location)
 
         automl.fit(self.x_train, self.y_train)
@@ -564,7 +542,7 @@ class TabularAutoML:
         self.logger.info(f"aml = H2OAutoML(seed=1)"
                          f"aml.train(x=x, y=y, training_frame=train_h2o)")
 
-        aml = H2OAutoML(seed=1)
+        aml = H2OAutoML(seed=1, max_runtime_secs=3600, max_runtime_secs_per_model=600, max_models=6)
         aml.train(x=x, y=y, training_frame=train_h2o)
 
         # View the AutoML Leaderboard
@@ -620,8 +598,9 @@ class TabularAutoML:
         if path:
             self.performance_metrics().to_csv(path)
         else:
-            self.performance_metrics().to_csv(os.path.join(self.saved_models_directory_path,
-                                                           'performance_metrics.csv'))
+            path = os.path.join(self.saved_models_directory_path, 'performance_metrics.csv')
+            self.performance_metrics().to_csv(path, index=False)
+        return path
 
     def save_details(self, automl_name, model_name, predictions):
         prediction_path = os.path.join(self.prediction_data_directory_path, f'{model_name}.csv')

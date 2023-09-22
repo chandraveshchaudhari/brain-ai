@@ -26,6 +26,23 @@ def datapoint_is_in_range(datapoint, range_datapoint):
         return False
 
 
+def convert_date_time_to_range(datetime_string):
+    from datetime import timedelta
+    from dateutil.relativedelta import relativedelta
+
+    temp = pd.to_datetime(datetime_string)
+
+    # Calculate the date 3 months ago
+    three_months_ago = temp - relativedelta(months=3)
+
+    three_months_ago = three_months_ago + timedelta(days=1)
+    formatted_date = three_months_ago.strftime('%Y-%m-%d')
+
+    range_text = f"{formatted_date} to {datetime_string}"
+
+    return range_text
+
+
 def range_is_in_range(record1, record_2, column):
     lower_limit_1, upper_limit_1 = record1[column].split(" to ")
     lower_limit_2, upper_limit_2 = record_2[column].split(" to ")
@@ -81,7 +98,7 @@ class Merge:
         self.sorting_column_list = self.get_sorting_column_list()
         print(f"Sorting columns are {self.sorting_column_list}")
 
-    def merge_all_dataset(self):
+    def merge_all_dataset(self, merged_dataset_path="merged_dataset.csv"):
         """
         Merge the datasets based on common columns. The common columns are found using the common_columns method. The
         data is converted to list of records using the DataTypeInterchange class. The records are then merged based on
@@ -104,7 +121,6 @@ class Merge:
             print(f"merged_dataset_{i}.csv created")
             i += 1
 
-        merged_dataset_path = "merged_dataset.csv"
         DataTypeInterchange(merged_data_list).dataframe.to_csv(merged_dataset_path, index=False)
         print(f"{merged_dataset_path} created")
 

@@ -91,14 +91,23 @@ def calculate_all_classification_metrics(y_true, y_pred, y_scores=None, pos_labe
     class_rep = classification_report(y_true, y_pred, output_dict=True)
     metrics_dict['Classification Report'] = class_rep
 
-    # F1 Score
-    f1 = f1_score(y_true, y_pred)
-    metrics_dict['F1 Score'] = f1
+    if "UP" in y_pred.values:
+        # F1 ScorezcX
+        f1 = f1_score(y_true, y_pred, pos_label='UP')
+        metrics_dict['F1 Score'] = f1
 
-    # F-beta Score
-    beta = 1  # You can change the beta value as needed
-    fbeta = fbeta_score(y_true, y_pred, beta=beta)
-    metrics_dict[f'F-{beta} Score'] = fbeta
+        # F-beta Score
+        beta = 1  # You can change the beta value as needed
+        fbeta = fbeta_score(y_true, y_pred, beta=beta, pos_label='UP')
+        metrics_dict[f'F-{beta} Score'] = fbeta
+    else:
+        f1 = f1_score(y_true, y_pred)
+        metrics_dict['F1 Score'] = f1
+
+        # F-beta Score
+        beta = 1  # You can change the beta value as needed
+        fbeta = fbeta_score(y_true, y_pred, beta=beta)
+        metrics_dict[f'F-{beta} Score'] = fbeta
 
     # Hamming Loss (Multilabel Classification)
     if len(y_true.shape) > 1 and y_true.shape[1] > 1:
