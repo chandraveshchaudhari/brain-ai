@@ -594,6 +594,18 @@ class TabularAutoML:
 
         return pd.DataFrame(record_list)
 
+    def best_prediction(self, based_on='Accuracy'):
+        predictions = self.performance_metrics()
+        return predictions[predictions[based_on] == predictions[based_on].max()]
+
+    def best_model(self, based_on='Accuracy'):
+        return self.best_prediction(based_on=based_on)['model_name'].values[0]
+
+    def best_model_prediction_path(self, based_on='Accuracy'):
+        path = self.prediction_dictionary[self.best_model(based_on=based_on)]
+        self.prediction_dictionary['best_prediction_path'] = path
+        return path
+
     def save_performance_metrics(self, path=None):
         if path:
             self.performance_metrics().to_csv(path)
@@ -612,3 +624,4 @@ class TabularAutoML:
                         self.prediction_dictionary)
         self.logger.info(f"Saved prediction dictionary with {model_name} predictions"
                          f" at {self.prediction_dictionary_file_path}.")
+

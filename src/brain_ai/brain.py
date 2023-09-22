@@ -65,12 +65,14 @@ class Brain(Memory):
                                                                   tabular_directory=self.directories_created[0])
                             dataset_info['Directories Created'] = tabular_automl_object.directories_created
                             tabular_automl_object.train_predict_save_metrics(clean_data=dataset_info['clean_data'])
+                            tabular_automl_object.best_model_prediction_path()
                         else:
                             tabular_automl_object = TabularAutoML(dataset_info['path'], dataset_info['target'],
                                                                   logger=self.logger,
                                                                   tabular_directory=self.directories_created[0])
                             dataset_info['Directories Created'] = tabular_automl_object.directories_created
                             tabular_automl_object.train_predict_save_metrics(clean_data=dataset_info['clean_data'])
+                            tabular_automl_object.best_model_prediction_path()
                 elif dataset_type.endswith('Sentiment_data'):
                     if 'prediction_dictionary_path' not in dataset_info:
                         sentiment_data = SentimentDataExecutor(dataset_info['path'],
