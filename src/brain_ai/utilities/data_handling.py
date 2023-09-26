@@ -184,10 +184,12 @@ def create_directories_from_path(path, logger=None):
     """Creates directories from the given path if they do not exist."""
     if not os.path.exists(path):
         os.makedirs(path)
-        logger.info(f"Created directory {path}")
+        if logger:
+            logger.info(f"Created directory {path}")
         print(f"Created directory {path}")
     else:
-        logger.info(f"Directory {path} already exists")
+        if logger:
+            logger.info(f"Directory {path} already exists")
         print(f"Directory {path} already exists")
 
 
@@ -242,29 +244,33 @@ def load_from_pickle(file_name):
 
 
 def load_data_for_auto_ml(data_or_path, target_data_or_column_name, logger=None):
+
     if type(data_or_path) is str:
         logger.info(f"Loading data from {data_or_path}")
         data = DataHandler(data_or_path).dataframe()
-        if type(data) is not pd.DataFrame:
-            raise TypeError("Data must be pandas DataFrame")
+        complete_data = data.copy()
 
-    if type(target_data_or_column_name) is str:
-        logger.info(f"target column is {target_data_or_column_name}")
+        if type(target_data_or_column_name) is str:
+            logger.info(f"target column is {target_data_or_column_name}")
 
-        target_column_name = target_data_or_column_name
-        complete_data = data_or_path.copy()
-        target_data = data_or_path[target_column_name]
-        data_without_target = data_or_path.drop(columns=target_column_name)
-    else:
-        logger.info(f"target data is provided directly: {len(target_data_or_column_name)}")
+            target_column_name = target_data_or_column_name
+            target_data = data[target_column_name]
+            data_without_target = data.drop(columns=target_column_name)
 
-        target_column_name = target_data_or_column_name.columns[0]
+            return complete_data, target_column_name, data_without_target, target_data
+
+    elif type(data_or_path) is pd.DataFrame and type(target_data_or_column_name) is pd.DataFrame:
+        logger.info(f"target data of {type(data_or_path)} is provided directly: {len(target_data_or_column_name)}")
+        target_column_name = list(target_data_or_column_name.columns)[0]
 
         logger.info(f"target column is {target_column_name}")
         data_without_target = data_or_path.copy()
         target_data = target_data_or_column_name
         complete_data = pd.concat([data_without_target, target_data], axis=1)
-    return complete_data, target_column_name, data_without_target, target_data
+        return complete_data, target_column_name, data_without_target, target_data
+    else:
+        raise Exception(f"Please use str or pandas.DataFrame for both data_or_path and target_data_or_column_name"
+                        f" but we got {type(data_or_path)} and {type(target_data_or_column_name)}")
 
 
 def generate_train_test_split(complete_data, target_column_name, data_without_target, target_data,

@@ -3,8 +3,6 @@ import pandas as pd
 import numpy as np
 import seaborn as sns
 from matplotlib import pyplot as plt
-from sklearn.metrics import confusion_matrix, precision_score, accuracy_score, recall_score, mean_squared_error, \
-    r2_score
 
 from supervised.utils.additional_metrics import AdditionalMetrics
 
@@ -16,9 +14,6 @@ from sklearn.metrics import accuracy_score, classification_report, f1_score, fbe
 from sklearn.metrics import hamming_loss, jaccard_score, log_loss, multilabel_confusion_matrix
 from sklearn.metrics import precision_recall_fscore_support, precision_score, recall_score
 from sklearn.metrics import zero_one_loss, average_precision_score
-
-
-
 
 
 def calculate_all_classification_metrics(y_true, y_pred, y_scores=None, pos_label=None):
@@ -69,7 +64,8 @@ def calculate_all_classification_metrics(y_true, y_pred, y_scores=None, pos_labe
         lr_pos, lr_neg = class_likelihood_ratios(y_true, y_pred)
         metrics_dict['Class Likelihood Ratios'] = {'LR+': lr_pos, 'LR-': lr_neg}
 
-
+    metrics_dict['Precision Score'] = precision_score(y_true, y_pred)
+    metrics_dict['Recall Score'] = recall_score(y_true, y_pred)
 
     # Balanced Accuracy
     metrics_dict['Balanced Accuracy'] = balanced_accuracy_score(y_true, y_pred)

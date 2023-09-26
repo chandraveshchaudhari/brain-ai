@@ -157,7 +157,7 @@ class TabularAutoML:
         self.generated_data_directory_path = self.directories_created[4]
 
         if logger is None:
-            self.logger = Logger(log_project_name=project_name, log_directory_path=self.directories_created[0])
+            self.logger = Logger(log_project_name=project_name, log_directory_path=self.tabular_log_directory_path)
         else:
             self.logger = logger
         self.logger.welcome_log(project_name)
