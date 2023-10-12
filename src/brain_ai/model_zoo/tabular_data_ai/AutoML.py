@@ -275,6 +275,8 @@ class TabularAutoML:
 
         self.logger.info(f"Trained models are saved at {self.saved_models_directory_path} and "
                          f"predictions are saved at {self.prediction_data_directory_path}.")
+        self.best_model_prediction_path()
+
         return True
 
     def autogluon_automl(self, enable_text_special_features=False,
@@ -595,15 +597,18 @@ class TabularAutoML:
         return pd.DataFrame(record_list)
 
     def best_prediction(self, based_on='Accuracy'):
+        print(f"Best predictions")
         predictions = self.performance_metrics()
         return predictions[predictions[based_on] == predictions[based_on].max()]
 
     def best_model(self, based_on='Accuracy'):
+        print(f"Best model based on {based_on}:")
         return self.best_prediction(based_on=based_on)['model_name'].values[0]
 
     def best_model_prediction_path(self, based_on='Accuracy'):
         path = self.prediction_dictionary[self.best_model(based_on=based_on)]
         self.prediction_dictionary['best_prediction_path'] = path
+        print(f"Best model prediction path: {path}")
         return path
 
     def save_performance_metrics(self, path=None):
@@ -611,7 +616,10 @@ class TabularAutoML:
             self.performance_metrics().to_csv(path)
         else:
             path = os.path.join(self.saved_models_directory_path, 'performance_metrics.csv')
-            self.performance_metrics().to_csv(path, index=False)
+            if os.path.isfile(path):
+                return path
+            else:
+                self.performance_metrics().to_csv(path, index=False)
         return path
 
     def save_details(self, automl_name, model_name, predictions):

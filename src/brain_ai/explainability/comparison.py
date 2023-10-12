@@ -6,7 +6,6 @@ from matplotlib import pyplot as plt
 
 from supervised.utils.additional_metrics import AdditionalMetrics
 
-
 from sklearn.metrics import precision_recall_curve, roc_curve, class_likelihood_ratios, det_curve
 from sklearn.metrics import balanced_accuracy_score, cohen_kappa_score, confusion_matrix
 from sklearn.metrics import hinge_loss, matthews_corrcoef, roc_auc_score, top_k_accuracy_score
@@ -17,6 +16,7 @@ from sklearn.metrics import zero_one_loss, average_precision_score
 
 
 def calculate_all_classification_metrics(y_true, y_pred, y_scores=None, pos_label=None):
+    assert len(y_true) == len(y_pred), f'y_true ({len(y_true)}) and y_pred ({len(y_pred)}) must have the same length.'
 
     metrics_dict = {}
 
@@ -57,15 +57,10 @@ def calculate_all_classification_metrics(y_true, y_pred, y_scores=None, pos_labe
         roc_auc = roc_auc_score(y_true, y_scores)
         metrics_dict['ROC AUC Score'] = roc_auc
 
-
-
     # Class Likelihood Ratios (Binary Classification)
     if len(set(y_true)) == 2:
         lr_pos, lr_neg = class_likelihood_ratios(y_true, y_pred)
         metrics_dict['Class Likelihood Ratios'] = {'LR+': lr_pos, 'LR-': lr_neg}
-
-    metrics_dict['Precision Score'] = precision_score(y_true, y_pred)
-    metrics_dict['Recall Score'] = recall_score(y_true, y_pred)
 
     # Balanced Accuracy
     metrics_dict['Balanced Accuracy'] = balanced_accuracy_score(y_true, y_pred)
@@ -76,12 +71,8 @@ def calculate_all_classification_metrics(y_true, y_pred, y_scores=None, pos_labe
     # Confusion Matrix
     metrics_dict['Confusion Matrix'] = confusion_matrix(y_true, y_pred)
 
-
-
     # Matthews Correlation Coefficient
     metrics_dict['Matthews Correlation Coefficient'] = matthews_corrcoef(y_true, y_pred)
-
-
 
     # Accuracy
     metrics_dict['Accuracy'] = accuracy_score(y_true, y_pred)
@@ -90,7 +81,10 @@ def calculate_all_classification_metrics(y_true, y_pred, y_scores=None, pos_labe
     class_rep = classification_report(y_true, y_pred, output_dict=True)
     metrics_dict['Classification Report'] = class_rep
 
-    if "UP" in y_pred.values:
+    if "UP" in list(y_pred.values) or "UP" in list(y_true.values):
+        metrics_dict['Precision Score'] = precision_score(y_true, y_pred, pos_label='UP')
+        metrics_dict['Recall Score'] = recall_score(y_true, y_pred, pos_label='UP')
+
         # F1 ScorezcX
         f1 = f1_score(y_true, y_pred, pos_label='UP')
         metrics_dict['F1 Score'] = f1
@@ -145,8 +139,6 @@ def calculate_all_classification_metrics(y_true, y_pred, y_scores=None, pos_labe
         rec_score = recall_score(y_true, y_pred, average=None)
         for i, label in enumerate(set(y_true)):
             metrics_dict[f'Recall (Class {label})'] = rec_score[i]
-
-
 
     # Zero-One Loss (Multiclass Classification)
     if len(set(y_true)) > 2:

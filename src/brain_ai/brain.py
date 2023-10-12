@@ -57,6 +57,9 @@ class Brain(Memory):
                                                                   tabular_directory=self.directories_created[0])
                             dataset_info['Directories Created'] = tabular_automl_object.directories_created
                             tabular_automl_object.train_predict_save_metrics(clean_data=dataset_info['clean_data'])
+                            tabular_automl_object.best_model_prediction_path()
+                            self.configuration['datasets'][dataset_type]['prediction_dictionary_path'] = os.path.join(
+                                self.directories_created[3], 'prediction_dictionary.json')
 
                         elif 'test_size' in dataset_info:
                             tabular_automl_object = TabularAutoML(dataset_info['path'], dataset_info['target'],
@@ -66,6 +69,9 @@ class Brain(Memory):
                             dataset_info['Directories Created'] = tabular_automl_object.directories_created
                             tabular_automl_object.train_predict_save_metrics(clean_data=dataset_info['clean_data'])
                             tabular_automl_object.best_model_prediction_path()
+                            self.configuration['datasets'][dataset_type]['prediction_dictionary_path'] = os.path.join(
+                                self.directories_created[3], 'prediction_dictionary.json')
+
                         else:
                             tabular_automl_object = TabularAutoML(dataset_info['path'], dataset_info['target'],
                                                                   logger=self.logger,
@@ -73,6 +79,8 @@ class Brain(Memory):
                             dataset_info['Directories Created'] = tabular_automl_object.directories_created
                             tabular_automl_object.train_predict_save_metrics(clean_data=dataset_info['clean_data'])
                             tabular_automl_object.best_model_prediction_path()
+                            self.configuration['datasets'][dataset_type]['prediction_dictionary_path'] = os.path.join(
+                                self.directories_created[3], 'prediction_dictionary.json')
                 elif dataset_type.endswith('Sentiment_data'):
                     if 'prediction_dictionary_path' not in dataset_info:
                         sentiment_data = SentimentDataExecutor(dataset_info['path'],
@@ -80,6 +88,8 @@ class Brain(Memory):
                         sentiment_data_path = os.path.join(self.directories_created[4], 'sentiment_data.csv')
                         dataset_info['y_pred'] = sentiment_data_path
                         DataHandler().write(sentiment_data_path, sentiment_data)
+                        self.configuration['datasets'][dataset_type]['prediction_dictionary_path'] = os.path.join(
+                            self.directories_created[3], 'prediction_dictionary.json')
                 else:
                     raise NotImplementedError(f"Unknown dataset type: {dataset_type}")
 
