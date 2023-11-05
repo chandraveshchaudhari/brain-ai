@@ -1,6 +1,6 @@
 import os
 
-from brain_ai.utilities.data_handling import DataHandler, create_directories_from_path
+from brain_automl.utilities.data_handling import DataHandler, create_directories_from_path
 
 
 class Memory:

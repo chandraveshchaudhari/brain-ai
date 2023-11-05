@@ -1,12 +1,12 @@
 import os
 
-from brain_ai.explainability.exploratory_data_analysis import find_common_columns
-from brain_ai.memory import Memory
-from brain_ai.model_zoo.tabular_data_ai.AutoML import TabularAutoML
-from brain_ai.model_zoo.text_data_ai.execution import SentimentDataExecutor
-from brain_ai.utilities.data_handling import DataHandler
-from brain_ai.utilities.dataset_merger import Merge
-from brain_ai.utilities.log_handling import Logger
+from brain_automl.explainability.exploratory_data_analysis import find_common_columns
+from brain_automl.memory import Memory
+from brain_automl.model_zoo.tabular_data_ai.AutoML import TabularAutoML
+from brain_automl.model_zoo.text_data_ai.execution import SentimentDataExecutor
+from brain_automl.utilities.data_handling import DataHandler
+from brain_automl.utilities.dataset_merger import Merge, convert_date_time_to_range
+from brain_automl.utilities.log_handling import Logger
 
 
 class Brain(Memory):
@@ -31,14 +31,16 @@ class Brain(Memory):
 
     def train_and_test_brain(self):
         self.training_and_testing_subpart_of_brain()
-        self.merge_dataset()
-        brain_object = TabularAutoML(self.configuration['Merged Dataset Path'],
-                      'target', logger=self.logger,
-                      tabular_directory=self.directories_created[0],
-                      project_name=self.project_name).train_predict_save_metrics(clean_data=self.configuration['clean_data'])
-        prediction_path = os.path.join(brain_object.saved_models_directory_path, 'performance_metrics.csv')
+        if 'Merged Dataset Path' not in self.configuration:
+            self.merge_dataset()
+        brain = TabularAutoML(self.configuration['Merged Dataset Path'],
+                                     'target', logger=self.logger,
+                                     tabular_directory=self.directories_created[0],
+                                     project_name=self.project_name)
+        brain.train_predict_save_metrics(clean_data=self.configuration['clean_data'])
+        prediction_path = os.path.join(brain.saved_models_directory_path, 'performance_metrics.csv')
         self.configuration['prediction_path'] = prediction_path
-        return brain_object.performance_metrics()
+        return brain.performance_metrics()
 
     def training_and_testing_subpart_of_brain(self):
 
@@ -59,7 +61,7 @@ class Brain(Memory):
                             tabular_automl_object.train_predict_save_metrics(clean_data=dataset_info['clean_data'])
                             tabular_automl_object.best_model_prediction_path()
                             self.configuration['datasets'][dataset_type]['prediction_dictionary_path'] = os.path.join(
-                                self.directories_created[3], 'prediction_dictionary.json')
+                                dataset_info['Directories Created'][3], 'prediction_dictionary.json')
 
                         elif 'test_size' in dataset_info:
                             tabular_automl_object = TabularAutoML(dataset_info['path'], dataset_info['target'],
@@ -70,7 +72,7 @@ class Brain(Memory):
                             tabular_automl_object.train_predict_save_metrics(clean_data=dataset_info['clean_data'])
                             tabular_automl_object.best_model_prediction_path()
                             self.configuration['datasets'][dataset_type]['prediction_dictionary_path'] = os.path.join(
-                                self.directories_created[3], 'prediction_dictionary.json')
+                                dataset_info['Directories Created'][3], 'prediction_dictionary.json')
 
                         else:
                             tabular_automl_object = TabularAutoML(dataset_info['path'], dataset_info['target'],
@@ -80,7 +82,7 @@ class Brain(Memory):
                             tabular_automl_object.train_predict_save_metrics(clean_data=dataset_info['clean_data'])
                             tabular_automl_object.best_model_prediction_path()
                             self.configuration['datasets'][dataset_type]['prediction_dictionary_path'] = os.path.join(
-                                self.directories_created[3], 'prediction_dictionary.json')
+                                dataset_info['Directories Created'][3], 'prediction_dictionary.json')
                 elif dataset_type.endswith('Sentiment_data'):
                     if 'prediction_dictionary_path' not in dataset_info:
                         sentiment_data = SentimentDataExecutor(dataset_info['path'],
@@ -89,7 +91,7 @@ class Brain(Memory):
                         dataset_info['y_pred'] = sentiment_data_path
                         DataHandler().write(sentiment_data_path, sentiment_data)
                         self.configuration['datasets'][dataset_type]['prediction_dictionary_path'] = os.path.join(
-                            self.directories_created[3], 'prediction_dictionary.json')
+                            dataset_info['Directories Created'][3], 'prediction_dictionary.json')
                 else:
                     raise NotImplementedError(f"Unknown dataset type: {dataset_type}")
 
@@ -125,6 +127,9 @@ class Brain(Memory):
             common_columns = find_common_columns([list_of_dataset[0], list_of_dataset[3]])
             print(f"Common columns are {common_columns}")
             new_tabular_df = list_of_dataset[0][common_columns]
+            # convert DateTime to range Quarter
+            new_tabular_df[common_columns[0]] = new_tabular_df[common_columns[0]].map(convert_date_time_to_range)
+
             new_tabular_df['Tabular AutoML Prediction'] = list_of_dataset[2]
             new_tabular_df['target'] = list_of_dataset[1]
 

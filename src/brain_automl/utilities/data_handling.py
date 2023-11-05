@@ -69,6 +69,7 @@ class DataHandler:
     """
 
     def __init__(self, data_path=None, *args, **kwargs):
+        print(f"DataHandler is called with {data_path}")
         self.data_path = data_path
         self.args = args
         self.kwargs = kwargs

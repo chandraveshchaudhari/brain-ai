@@ -17,16 +17,20 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier
 
-from brain_ai.data_processing.feature_engineering import FeatureEngineering
-from brain_ai.data_processing.wrangling import DataClean
-from brain_ai.explainability.comparison import calculate_all_classification_metrics, \
+from brain_automl.data_processing.feature_engineering import FeatureEngineering
+from brain_automl.data_processing.wrangling import DataClean
+from brain_automl.explainability.comparison import calculate_all_classification_metrics, \
     convert_metrics_to_record
-from brain_ai.memory import initiate_directory_structure
-from brain_ai.model_zoo.tabular_data_ai.machine_learning_algorithm import train_neural_network, \
+from brain_automl.memory import initiate_directory_structure
+from brain_automl.model_zoo.tabular_data_ai.machine_learning_algorithm import train_neural_network, \
     sklearn_model_train, KerasNeuralNetwork
-from brain_ai.utilities.data_handling import DataHandler, write_json_file, load_data_for_auto_ml, \
+from brain_automl.utilities.data_handling import DataHandler, write_json_file, load_data_for_auto_ml, \
     generate_train_test_split
-from brain_ai.utilities.log_handling import Logger
+from brain_automl.utilities.log_handling import Logger
+
+
+from autogluon.features.generators import AsTypeFeatureGenerator, BulkFeatureGenerator, CategoryFeatureGenerator, DropDuplicatesFeatureGenerator, FillNaFeatureGenerator, IdentityFeatureGenerator  # noqa
+from autogluon.common.features.types import R_INT, R_FLOAT
 
 
 class TabularAIExecutor:
@@ -147,7 +151,7 @@ class TabularAIExecutor:
 class TabularAutoML:
     def __init__(self, data_or_path, target_data_or_column_name,
                  split_data_by_column_name_and_value_dict=None, test_size=0.33,
-                 logger=None, tabular_directory=os.getcwd(), project_name="Tabular AutoML"):
+                 logger=None, tabular_directory=os.getcwd(), feature_selection=True, project_name="Tabular AutoML"):
 
         self.directories_created = initiate_directory_structure(tabular_directory, project_name,
                                                                 logs=True, saved_models=True, predicted_data=True)
@@ -155,6 +159,7 @@ class TabularAutoML:
         self.saved_models_directory_path = self.directories_created[2]
         self.prediction_data_directory_path = self.directories_created[3]
         self.generated_data_directory_path = self.directories_created[4]
+        self.feature_selection = feature_selection
 
         if logger is None:
             self.logger = Logger(log_project_name=project_name, log_directory_path=self.tabular_log_directory_path)
@@ -275,7 +280,6 @@ class TabularAutoML:
 
         self.logger.info(f"Trained models are saved at {self.saved_models_directory_path} and "
                          f"predictions are saved at {self.prediction_data_directory_path}.")
-        self.best_model_prediction_path()
 
         return True
 
@@ -299,7 +303,25 @@ class TabularAutoML:
                          f" and logs will be saved here: {tabular_auto_ml_log_path}")
         file_tabular_auto_ml_log_path = os.path.join(tabular_auto_ml_log_path, f'{package_name}.log')
 
-        custom_feature_generator = AutoMLPipelineFeatureGenerator(
+        if not self.feature_selection:
+            generators = [
+                [AsTypeFeatureGenerator()],
+                # Convert all input features to the exact same types as they were during fit.
+                [FillNaFeatureGenerator()],  # Fill all NA values in the data
+                [
+                    CategoryFeatureGenerator(),
+                    # Convert object types to category types and minimize their memory usage
+                    # Carry over all features that are not objects and categories (without this, the int features would be dropped).
+                    IdentityFeatureGenerator(infer_features_in_args=dict(valid_raw_types=[R_INT, R_FLOAT])),
+                ],
+                # CategoryFeatureGenerator and IdentityFeatureGenerator will have their outputs concatenated together
+                # before being fed into DropDuplicatesFeatureGenerator
+                # [DropDuplicatesFeatureGenerator()]  # Drops any features which are duplicates of each-other
+            ]
+            custom_feature_generator = BulkFeatureGenerator(generators=generators, verbosity=3)
+        else:
+
+            custom_feature_generator = AutoMLPipelineFeatureGenerator(
             enable_text_special_features=enable_text_special_features,
             enable_text_ngram_features=enable_text_ngram_features,
             enable_raw_text_features=enable_raw_text_features,
@@ -502,6 +524,7 @@ class TabularAutoML:
                          f"ml_task='binary_classification', golden_features=False, features_selection=False,"
                          f"results_path={saved_model_location})")
         # train models with AutoML
+
         automl = AutoML(mode="Compete", model_time_limit=mljar_model_time_limit, ml_task='binary_classification',
                         golden_features=False, features_selection=False, results_path=saved_model_location)
 
@@ -575,6 +598,10 @@ class TabularAutoML:
         self.save_performance_metrics()
 
     def performance_metrics(self):
+        path = os.path.join(self.saved_models_directory_path, 'performance_metrics.csv')
+        if os.path.isfile(path):
+            return pd.read_csv(path)
+
         record_list = []
         for model_name, path in self.prediction_dictionary.items():
             if path is True:

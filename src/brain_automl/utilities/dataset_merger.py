@@ -5,9 +5,9 @@ Takes multiple dataset and merge them based on common column.
 
 import pandas as pd
 
-from brain_ai.explainability.exploratory_data_analysis import find_common_columns, is_datetime_range_element, \
+from brain_automl.explainability.exploratory_data_analysis import find_common_columns, is_datetime_range_element, \
     is_datetime_element, datetime_element, range_element
-from brain_ai.utilities.data_handling import DataTypeInterchange
+from brain_automl.utilities.data_handling import DataTypeInterchange
 
 
 def datapoint_is_in_range(datapoint, range_datapoint):

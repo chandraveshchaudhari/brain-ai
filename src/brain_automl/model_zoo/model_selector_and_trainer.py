@@ -1,8 +1,8 @@
 import logging
 
-from brain_ai.model_zoo.tabular_data_ai.AutoML import TabularAIExecutor
-from brain_ai.model_zoo.text_data_ai.execution import SentimentDataExecutor
-from brain_ai.utilities.data_handling import DataHandler
+from brain_automl.model_zoo.tabular_data_ai.AutoML import TabularAIExecutor
+from brain_automl.model_zoo.text_data_ai.execution import SentimentDataExecutor
+from brain_automl.utilities.data_handling import DataHandler
 
 
 class ModelZoo:
