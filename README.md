@@ -17,9 +17,7 @@ Brain-AutoML model is capable of scaling to any number of data types such as tab
 ### Authors
 <img align="left" width="231.95" height="75" src="https://raw.githubusercontent.com/chandraveshchaudhari/personal-information/initial_setup/images/christ.png">
 
-The packages [systematic-reviewpy](https://github.com/chandraveshchaudhari/systematic-reviewpy) and 
-[browser-automationpy](https://github.com/chandraveshchaudhari/browser-automationpy) are part of Research paper 
-`An open-source Python framework for systematic review based on PRISMA` created by [Chandravesh chaudhari][chandravesh linkedin], Doctoral candidate at [CHRIST (Deemed to be University), Bangalore, India][christ university website] under the supervision of [Dr. Geetanjali purswani][geetanjali linkedin].
+The package [Brain-AutoML](https://github.com/chandraveshchaudhari/brain-ai/) is part of thesis created by [Chandravesh chaudhari][chandravesh linkedin], Doctoral candidate at [CHRIST (Deemed to be University), Bangalore, India][christ university website] under the supervision of [Dr. Geetanjali purswani][geetanjali linkedin].
 
 <br/>
 
