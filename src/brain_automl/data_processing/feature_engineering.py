@@ -2,10 +2,11 @@
 # feature_generator = AutoMLPipelineFeatureGenerator().fit_transform(X=X_train, y=y_train)
 
 from math import log, e
+from scipy.stats import skew
 
 import numpy as np
 import pandas as pd
-from sklearn.preprocessing import StandardScaler, MinMaxScaler, LabelEncoder, RobustScaler
+from sklearn.preprocessing import StandardScaler, MinMaxScaler, LabelEncoder, RobustScaler, MaxAbsScaler
 
 
 def get_datatime_type(data_string):
@@ -86,12 +87,15 @@ def date_format_to_numeric_format(date_format, start_date=2006):
 
 
 class FeatureEngineering:
-    def __init__(self, dataset_df, target_column_name):
+    def __init__(self, dataset_df, target_column_name, preserve_columns=None):
         """{'StandardScaler':[], 'MinMaxScaler':[], 'logarithm_transformation_apply':[],
                                     'scaling_time_column':[], 'LabelEncoder':[]}"""
         self.dataset_df = dataset_df
         self.target_column_name = target_column_name
+        self.preserve_columns = preserve_columns
+
         self.configuration_dictionary = self.deciding_feature_engineering_based_on_columns()
+
 
     def get_available_columns_list(self, input_column_names_list):
         available_columns = []
@@ -101,22 +105,26 @@ class FeatureEngineering:
         return available_columns
 
     def deciding_feature_engineering_based_on_columns(self):
-        column_scaling_type_dict = {'StandardScaler': [], 'RobustScaler': [], 'MinMaxScaler': [],
-                                    'logarithm_transformation_apply': [],
+        column_scaling_type_dict = {'StandardScaler': [], 'MinMaxScaler': [],
+                                    'logarithm_transformation_apply': [],  'MaxAbsScaler': [],
                                     'engineer_datetime': [], 'LabelEncoder': [], 'Delete': []}
+
         for column in self.dataset_df.columns:
-            first_valid_index = self.dataset_df[column].first_valid_index()
+            if column in self.preserve_columns:
+                print(f"{column} is not scaled")
+                continue
 
             if column == self.target_column_name:
                 column_scaling_type_dict['LabelEncoder'].append(column)
             elif check_if_datetime_as_object_feature(self.dataset_df[column]):
                 column_scaling_type_dict['engineer_datetime'].append(column)
             elif get_type_family_raw(self.dataset_df[column].dtype) in ('int', 'float'):
+
                 if self.dataset_df[column].min() < 0:
-                    column_scaling_type_dict['RobustScaler'].append(column)
+                    column_scaling_type_dict['MaxAbsScaler'].append(column)
                 elif self.dataset_df[column].min() > 10000:
                     column_scaling_type_dict['logarithm_transformation_apply'].append(column)
-                elif self.dataset_df[column].min() > 0:
+                elif self.dataset_df[column].min() >= 0:
                     column_scaling_type_dict['MinMaxScaler'].append(column)
             elif get_type_family_raw(self.dataset_df[column].dtype) == 'object':
                 column_scaling_type_dict['Delete'].append(column)
@@ -134,6 +142,8 @@ class FeatureEngineering:
                 self.dataset_df = self.dataset_df.drop(columns=column_names_list)
             elif function_name == 'StandardScaler':
                 self.dataset_df[available_columns] = StandardScaler().fit_transform(self.dataset_df[available_columns])
+            elif function_name == 'MaxAbsScaler':
+                self.dataset_df[available_columns] = MaxAbsScaler().fit_transform(self.dataset_df[available_columns])
             elif function_name == 'RobustScaler':
                 self.dataset_df[available_columns] = RobustScaler().fit_transform(self.dataset_df[available_columns])
             elif function_name == 'MinMaxScaler':

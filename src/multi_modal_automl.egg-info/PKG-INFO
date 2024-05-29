@@ -1,11 +1,35 @@
+Metadata-Version: 2.1
+Name: multi-modal-automl
+Version: 0.0.1
+Summary: A Python project
+Home-page: https://github.com/chandraveshchaudhari/browser-automationpy
+Author: A. Random Developer
+Author-email: author@example.com
+Project-URL: Bug Tracker, https://github.com/chandraveshchaudhari/browser-automationpy/issues
+Project-URL: Bug Reports, https://github.com/chandraveshchaudhari/browser-automationpy/issues
+Project-URL: Say Thanks!, https://saythanks.io/to/chandraveshchaudhari
+Project-URL: Source, https://github.com/chandraveshchaudhari/browser-automationpy/
+Keywords: browser,automation,selenium,testing,data mining
+Classifier: Development Status :: 4 - Beta
+Classifier: Operating System :: OS Independent
+Classifier: Intended Audience :: Developers
+Classifier: Intended Audience :: End Users/Desktop
+Classifier: Topic :: Software Development :: Build Tools
+Classifier: Topic :: Internet :: WWW/HTTP :: Browsers
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.6
+Classifier: Programming Language :: Python :: 3.7
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Requires-Python: >=3.6, <4
+Description-Content-Type: text/markdown
+License-File: LICENSE.txt
+
 # Brain-AutoML
 <div align="center">
   <img src="https://raw.githubusercontent.com/chandraveshchaudhari/personal-information/initial_setup/logos/my%20github%20logo%20template-systematic-reviewpy%20small.png" width="640" height="320">
 </div>
-
-
-pip install brain-multiple-modalities-automl==0.0.1
-
 
 # An open-source Python framework for systematic review based on PRISMA : systematic-reviewpy
 > Chaudhari, C., Purswani, G. (2023). Stock Market Prediction Techniques Using Artificial Intelligence: A Systematic Review. In: Kumar, S., Sharma, H., Balachandran, K., Kim, J.H., Bansal, J.C. (eds) Third Congress on Intelligent Systems. CIS 2022. Lecture Notes in Networks and Systems, vol 608. Springer, Singapore. https://doi.org/10.1007/978-981-19-9225-4_17

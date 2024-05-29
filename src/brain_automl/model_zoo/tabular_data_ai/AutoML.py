@@ -28,8 +28,8 @@ from brain_automl.utilities.data_handling import DataHandler, write_json_file, l
     generate_train_test_split
 from brain_automl.utilities.log_handling import Logger
 
-
-from autogluon.features.generators import AsTypeFeatureGenerator, BulkFeatureGenerator, CategoryFeatureGenerator, DropDuplicatesFeatureGenerator, FillNaFeatureGenerator, IdentityFeatureGenerator  # noqa
+from autogluon.features.generators import AsTypeFeatureGenerator, BulkFeatureGenerator, CategoryFeatureGenerator, \
+    DropDuplicatesFeatureGenerator, FillNaFeatureGenerator, IdentityFeatureGenerator  # noqa
 from autogluon.common.features.types import R_INT, R_FLOAT
 
 
@@ -151,7 +151,8 @@ class TabularAIExecutor:
 class TabularAutoML:
     def __init__(self, data_or_path, target_data_or_column_name,
                  split_data_by_column_name_and_value_dict=None, test_size=0.33,
-                 logger=None, tabular_directory=os.getcwd(), feature_selection=True, project_name="Tabular AutoML"):
+                 logger=None, tabular_directory=os.getcwd(), feature_selection=True, project_name="Tabular AutoML",
+                 categorical_columns=True):
 
         self.directories_created = initiate_directory_structure(tabular_directory, project_name,
                                                                 logs=True, saved_models=True, predicted_data=True)
@@ -189,6 +190,8 @@ class TabularAutoML:
                                             target_data_or_column_name,
                                             logger=self.logger)
         self.complete_data, self.target_column_name, self.data_without_target, self.target_data = loaded_data
+
+        print(f"inside tabularautoml the split_data_by_column_name_and_value_dict is {split_data_by_column_name_and_value_dict}")
         generated_data = generate_train_test_split(self.complete_data,
                                                    self.target_column_name,
                                                    self.data_without_target,
@@ -197,26 +200,69 @@ class TabularAutoML:
                                                    test_size=test_size,
                                                    logger=self.logger)
         self.training_data, self.testing_data, self.x_train, self.x_test, self.y_train, self.y_test = generated_data
+        self.categorical_columns = categorical_columns
 
-        # save these dataframes to generated_data_directory_path
-        training_data_path = os.path.join(self.generated_data_directory_path, 'training_data.csv')
-        self.training_data.to_csv(training_data_path, index=False)
-        self.logger.info(f"Training data is saved at {training_data_path}.")
-        testing_data_path = os.path.join(self.generated_data_directory_path, 'testing_data.csv')
-        self.testing_data.to_csv(testing_data_path, index=False)
-        self.logger.info(f"Testing data is saved at {testing_data_path}.")
-        x_train_path = os.path.join(self.generated_data_directory_path, 'x_train.csv')
-        self.x_train.to_csv(x_train_path, index=False)
-        self.logger.info(f"x_train data is saved at {x_train_path}.")
-        x_test_path = os.path.join(self.generated_data_directory_path, 'x_test.csv')
-        self.x_test.to_csv(x_test_path, index=False)
-        self.logger.info(f"x_test data is saved at {x_test_path}.")
-        y_train_path = os.path.join(self.generated_data_directory_path, 'y_train.csv')
-        self.y_train.to_csv(y_train_path, index=False)
-        self.logger.info(f"y_train data is saved at {y_train_path}.")
-        y_test_path = os.path.join(self.generated_data_directory_path, 'y_test.csv')
-        self.y_test.to_csv(y_test_path, index=False)
-        self.logger.info(f"y_test data is saved at {y_test_path}.")
+        if categorical_columns:
+            # main data
+            training_data_path = os.path.join(self.generated_data_directory_path, 'training_data.csv')
+            self.training_data.to_csv(training_data_path, index=False)
+            self.logger.info(f"Training data is saved at {training_data_path}.")
+
+            testing_data_path = os.path.join(self.generated_data_directory_path, 'testing_data.csv')
+            self.testing_data.to_csv(testing_data_path, index=False)
+            self.logger.info(f"Testing data is saved at {testing_data_path}.")
+
+            x_train_path = os.path.join(self.generated_data_directory_path, 'x_train.csv')
+            self.x_train.to_csv(x_train_path, index=False)
+            self.logger.info(f"x_train data is saved at {x_train_path}.")
+            x_test_path = os.path.join(self.generated_data_directory_path, 'x_test.csv')
+            self.x_test.to_csv(x_test_path, index=False)
+            self.logger.info(f"x_test data is saved at {x_test_path}.")
+            y_train_path = os.path.join(self.generated_data_directory_path, 'y_train.csv')
+            self.y_train.to_csv(y_train_path, index=False)
+            self.logger.info(f"y_train data is saved at {y_train_path}.")
+            y_test_path = os.path.join(self.generated_data_directory_path, 'y_test.csv')
+            self.y_test.to_csv(y_test_path, index=False)
+            self.logger.info(f"y_test data is saved at {y_test_path}.")
+        else:
+            # main data
+            training_data_path = os.path.join(self.generated_data_directory_path, 'common_column_training_data.csv')
+            self.training_data.to_csv(training_data_path, index=False)
+            self.logger.info(f"Training data is saved at {training_data_path}.")
+
+            testing_data_path = os.path.join(self.generated_data_directory_path, 'common_column_testing_data.csv')
+            self.testing_data.to_csv(testing_data_path, index=False)
+            self.logger.info(f"Testing data is saved at {testing_data_path}.")
+
+            # managing the data wrangling to remove company and datetime column
+            x_train_path = os.path.join(self.generated_data_directory_path, 'common_column_x_train.csv')
+            self.x_train.to_csv(x_train_path, index=False)
+            self.logger.info(f"x_train data is saved at {x_train_path}.")
+            x_test_path = os.path.join(self.generated_data_directory_path, 'common_column_x_test.csv')
+            self.x_test.to_csv(x_test_path, index=False)
+            self.logger.info(f"x_test data is saved at {x_test_path}.")
+            y_train_path = os.path.join(self.generated_data_directory_path, 'common_column_y_train.csv')
+            self.y_train.to_csv(y_train_path, index=False)
+            self.logger.info(f"y_train data is saved at {y_train_path}.")
+            y_test_path = os.path.join(self.generated_data_directory_path, 'common_column_y_test.csv')
+            self.y_test.to_csv(y_test_path, index=False)
+            self.logger.info(f"y_test data is saved at {y_test_path}.")
+
+            # save these dataframes to generated_data_directory_path
+            # removing common columns
+            columns_to_remove = [col for col in self.training_data.columns if self.training_data[col].dtype == 'object']
+
+            # new DataFrame without the unwanted columns
+
+            self.training_data.drop(columns=columns_to_remove, inplace=True)
+            self.testing_data.drop(columns=columns_to_remove, inplace=True)
+
+            self.x_train.drop(columns=columns_to_remove, inplace=True)
+            self.x_test.drop(columns=columns_to_remove, inplace=True)
+            self.y_train.drop(columns=columns_to_remove, inplace=True)
+            self.y_test.drop(columns=columns_to_remove, inplace=True)
+
+            print("removing columns", columns_to_remove)
 
         self.generated_data_dictionary_path = os.path.join(self.generated_data_directory_path,
                                                            'generated_data_dictionary.json')
@@ -229,10 +275,10 @@ class TabularAutoML:
 
         write_json_file(self.generated_data_dictionary_path, generated_data_dictionary)
 
-    def train_predict(self, clean_data=False):
-
-        if clean_data:
-            print("clean data flag is True!")
+    def train_predict(self):
+        self.logger.info(f"The categorical_columns option is set to {self.categorical_columns}")
+        if not self.categorical_columns:
+            print("categorical_columns is False!")
             self.logger.info("the data is cleaned so following models will also be trained: 'Auto Keras Tabular' and "
                              "'TPOT Tabular'")
 
@@ -322,10 +368,10 @@ class TabularAutoML:
         else:
 
             custom_feature_generator = AutoMLPipelineFeatureGenerator(
-            enable_text_special_features=enable_text_special_features,
-            enable_text_ngram_features=enable_text_ngram_features,
-            enable_raw_text_features=enable_raw_text_features,
-            enable_vision_features=enable_vision_features)
+                enable_text_special_features=enable_text_special_features,
+                enable_text_ngram_features=enable_text_ngram_features,
+                enable_raw_text_features=enable_raw_text_features,
+                enable_vision_features=enable_vision_features)
 
         self.logger.info(f"TabularPredictor(label={self.target_column_name}, problem_type='binary', log_to_file=True,"
                          f"log_file_path={file_tabular_auto_ml_log_path},"
@@ -352,7 +398,7 @@ class TabularAutoML:
 
         return y_pred
 
-    def autokeras_automl(self, autokeras_epochs=100, autokeras_max_trials=10):
+    def autokeras_automl(self, autokeras_epochs=500, autokeras_max_trials=10):
         package_name = 'Auto Keras Tabular'
         self.logger.welcome_log(package_name)
 
@@ -593,8 +639,8 @@ class TabularAutoML:
             self.logger.info(f"Saved {model_id} model at {saved_model_location}.")
             self.save_details(package_name, model_id, y_pred_df)
 
-    def train_predict_save_metrics(self, clean_data=False):
-        self.train_predict(clean_data=clean_data)
+    def train_predict_save_metrics(self):
+        self.train_predict()
         self.save_performance_metrics()
 
     def performance_metrics(self):
@@ -635,6 +681,7 @@ class TabularAutoML:
     def best_model_prediction_path(self, based_on='Accuracy'):
         path = self.prediction_dictionary[self.best_model(based_on=based_on)]
         self.prediction_dictionary['best_prediction_path'] = path
+        self.generate_configuration_file()
         print(f"Best model prediction path: {path}")
         return path
 
@@ -660,3 +707,8 @@ class TabularAutoML:
         self.logger.info(f"Saved prediction dictionary with {model_name} predictions"
                          f" at {self.prediction_dictionary_file_path}.")
 
+    def generate_configuration_file(self, output_configuration_file_path=None):
+        if not output_configuration_file_path:
+            DataHandler().write(self.prediction_dictionary_file_path, data=self.prediction_dictionary)
+        else:
+            DataHandler().write(output_configuration_file_path, data=self.prediction_dictionary)

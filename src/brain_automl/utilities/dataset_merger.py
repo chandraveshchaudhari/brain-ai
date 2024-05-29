@@ -26,14 +26,14 @@ def datapoint_is_in_range(datapoint, range_datapoint):
         return False
 
 
-def convert_date_time_to_range(datetime_string):
+def convert_date_time_to_range(datetime_string, last_months=3):
     from datetime import timedelta
     from dateutil.relativedelta import relativedelta
 
     temp = pd.to_datetime(datetime_string)
 
     # Calculate the date 3 months ago
-    three_months_ago = temp - relativedelta(months=3)
+    three_months_ago = temp - relativedelta(months=last_months)
 
     three_months_ago = three_months_ago + timedelta(days=1)
     formatted_date = three_months_ago.strftime('%Y-%m-%d')
@@ -161,9 +161,10 @@ class Merge:
         # TODO: use datatype interchange to convert the records to dataframe and vice versa
 
         merged_record_list = []
-        # i = 0
+        j = 0
         for record_1 in record_list:
-
+            if j % 1000 == 0:
+                print(f"iteration {j} records checked of {len(record_list)} records: {len(merged_record_list)} records merged")
             # if i == 1000:
             #     return merged_record_list
 
@@ -174,8 +175,9 @@ class Merge:
                     # print(f"{record_1},---------------------------\n {record_2}")
                     new_record = {**record_2, **record_1}
                     merged_record_list.append(new_record)
+                    continue
                     # print(f"merging  record, {new_record} records merged)")
-                    # i += 1
+            j += 1
 
         print(f"Total {len(merged_record_list)} records merged")
 
