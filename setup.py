@@ -35,7 +35,7 @@ setuptools.setup(
     # There are some restrictions on what makes a valid project name
     # specification here:
     # https://packaging.python.org/specifications/core-metadata/#name
-    name='multi-modal-automl',  # Required
+    name='multimodal-automl',  # Required
 
     # name="browser-automationpy-CHANDRAVESH-CHAUDHARI",
     # Versions should comply with PEP 440:
