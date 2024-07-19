@@ -35,7 +35,7 @@ setuptools.setup(
     # There are some restrictions on what makes a valid project name
     # specification here:
     # https://packaging.python.org/specifications/core-metadata/#name
-    name='sampleproject',  # Required
+    name='multimodal-automl',  # Required
 
     # name="browser-automationpy-CHANDRAVESH-CHAUDHARI",
     # Versions should comply with PEP 440:
@@ -50,7 +50,7 @@ setuptools.setup(
     # This is a one-line description or tagline of what your project does. This
     # corresponds to the "Summary" metadata field:
     # https://packaging.python.org/specifications/core-metadata/#summary
-    description='A sample Python project',  # Optional
+    description='A Python project',  # Optional
 
     # description="A python project for easily launching custom automated browser to reduce repetitive boring work.",
     # This is an optional longer description of your project that represents
@@ -143,7 +143,7 @@ setuptools.setup(
     #
     #   py_modules=["my_module"],
     #
-    packages=find_packages(where='src'),  # Required
+    packages=setuptools.find_packages(where='src'),  # Required
 
     # packages=find_packages(exclude=('tests', 'docs')),
     # Specify which Python versions you support. In contrast to the
@@ -158,26 +158,67 @@ setuptools.setup(
     #
     # For an analysis of "install_requires" vs pip's requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
-    install_requires=['certifi>=2021.5.30',
-                      'charset-normalizer>=2.0.4',
-                      'colorama>=0.4.4',
-                      'configparser>=5.0.2',
-                      'crayons>=0.4.0',
-                      'idna>=3.2',
-                      'MouseInfo>=0.1.3',
-                      'Pillow>=8.3.1',
-                      'PyAutoGUI>=0.9.53',
-                      'PyGetWindow>=0.0.9',
-                      'PyMsgBox>=1.0.9',
-                      'pyperclip>=1.8.2',
-                      'PyRect>=0.1.4',
-                      'PyScreeze>=0.1.27',
-                      'python3-xlib>=0.15',
-                      'PyTweening>=1.0.3',
-                      'requests>=2.26.0',
-                      'selenium>=3.141.0',
-                      'urllib3>=1.26.6',
-                      'webdriver-manager>=3.4.2'],  # Optional
+    # install_requires = [ "auto-sklearn==0.15.0",
+    # "autogluon==0.8.3b20230911",
+    # "autogluon.common==0.8.3b20230911",
+    # "autogluon.core==0.8.3b20230911",
+    # "autogluon.features==0.8.3b20230911",
+    # "autogluon.multimodal==0.8.3b20230911",
+    # "autogluon.tabular==0.8.3b20230911",
+    # "autogluon.timeseries==0.8.3b20230911",
+    # "autokeras==1.1.0",
+    # "autoviz==0.1.730",
+    # "browser-automationpy==0.0.2",
+    # "huggingface-hub==0.16.4",
+    # "keras==2.11.0",
+    # "keras-core==0.1.5",
+    # "keras-nlp==0.6.1",
+    # "keras-tuner==1.3.5",
+    # "mljar-supervised==0.11.5",
+    # "mlxtend==0.21.0",
+    # "mxnet==1.9.1",
+    # "nltk==3.8.1",
+    # "openpyxl==3.1.1",
+    # "pandas==1.5.3",
+    # "pandas-dq==1.28",
+    # "pandas-profiling==3.6.6",
+    # "pycaret==3.1.0",
+    # "ReliefF==0.1.2",
+    # "scikit-base==0.5.1",
+    # "scikit-image==0.19.3",
+    # "scikit-learn==1.2.2",
+    # "scikit-learn-intelex==2023.2.1",
+    # "scikit-optimize==0.9.0",
+    # "scikit-plot==0.3.7",
+    # "scipy==1.10.1",
+    # "seaborn==0.12.2",
+    # "shap==0.42.1",
+    # "skope-rules==1.0.1",
+    # "skrebate==0.62",
+    # "spacy==3.5.2",
+    # "spacy-legacy==3.0.12",
+    # "spacy-loggers==1.0.4",
+    # "tensorboard==2.11.0",
+    # "tensorboardX==2.6",
+    # "tensorflow==2.11.0",
+    # "tensorflow-estimator==2.11.0",
+    # "tensorflow-hub==0.14.0",
+    # "tensorflow-io-gcs-filesystem==0.29.0",
+    # "tensorflow-text==2.11.0",
+    # "tokenizers==0.13.2",
+    # "torch==1.13.1+cpu",
+    # "torchaudio==0.13.1+cpu",
+    # "torchmetrics==1.0.3",
+    # "torchvision==0.14.1+cpu",
+    # "TPOT==0.12.0",
+    # "tqdm==4.64.1",
+    # "transformers==4.31.0",
+    # "treeinterpreter==0.2.3",
+    # "tune-sklearn==0.4.6",
+    # "tweet-parser==1.13.2",
+    # "xgboost==1.7.2",
+    # "xlrd==2.0.1"]
+
 
     # List additional groups of dependencies here (e.g. development
     # dependencies). Users will be able to install these using the "extras"

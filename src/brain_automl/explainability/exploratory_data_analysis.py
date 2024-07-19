@@ -10,7 +10,11 @@ def find_common_columns(dataframes):
     for dataframe in dataframes[1:]:
         common_columns = common_columns.intersection(set(dataframe.columns))
 
-    return list(common_columns)
+    if 'DateTime' in common_columns:
+        common_columns.remove('DateTime')
+    result = ['DateTime']
+    result.extend(list(common_columns))
+    return result
 
 
 def is_datetime_range_element(text):

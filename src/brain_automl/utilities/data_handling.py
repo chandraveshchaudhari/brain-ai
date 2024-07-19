@@ -276,6 +276,8 @@ def load_data_for_auto_ml(data_or_path, target_data_or_column_name, logger=None)
 
 def generate_train_test_split(complete_data, target_column_name, data_without_target, target_data,
                               split_data_by_column_name_and_value_dict=None, test_size=0.33, logger=None):
+    print(f"generate_train_test_split: split_data_by_column_name_and_value_dict is {split_data_by_column_name_and_value_dict}")
+
     if split_data_by_column_name_and_value_dict:
         print(f"split_data_by_column_name_and_value_dict is {split_data_by_column_name_and_value_dict}")
         logger.info(f"split_data_by_column_name_and_value_dict is {split_data_by_column_name_and_value_dict}")

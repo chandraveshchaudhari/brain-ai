@@ -12,13 +12,16 @@ class Memory:
 
         if type(configuration_dict_or_path) is dict:
             self.configuration = configuration_dict_or_path
-        elif type(configuration_dict_or_path) is str:
-            if os.path.isfile(self.configuration_path):
-                self.configuration = DataHandler(self.configuration_path).load()
-            else:
-                raise Exception(f"Configuration file can not be loaded from {self.configuration_path}.")
-        else:
             self.configuration_path = os.path.join(self.directories_created[0], "configuration.json")
+            print(self.configuration_path)
+            self.generate_configuration_file()
+
+        elif type(configuration_dict_or_path) is str:
+            if os.path.isfile(configuration_dict_or_path):
+                self.configuration = DataHandler(configuration_dict_or_path).load()
+            else:
+                raise Exception(f"Configuration file can not be loaded from {configuration_dict_or_path}.")
+        else:
             self.configuration = {
                 'datasets': {'Tabular_data': {'path': 'path_of_tabular_data', 'target': 'target_column_name',
                                               'prediction_dictionary': 'auto',
@@ -31,9 +34,9 @@ class Memory:
                              },
                 'Merged Dataset Path': "auto",
                 'Underlying_models_train_test_split': 0.33}
-
+            self.configuration_path = os.path.join(self.directories_created[0], "configuration.json")
             print(f"Configuration file not found at {self.configuration_path}. Creating a new one.")
-            self.generate_configuration_file(self.configuration_path)
+            self.generate_configuration_file()
 
     def generate_configuration_file(self, output_configuration_file_path=None):
         if not output_configuration_file_path:
