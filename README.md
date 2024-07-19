@@ -3,7 +3,7 @@
   <img src="https://raw.githubusercontent.com/chandraveshchaudhari/personal-information/initial_setup/logos/my%20github%20logo%20template-Brain-AutoML.drawio.png" width="640" height="320">
 </div>
 
-# Brain-AutoML
+# Brain-Multiple-Modalities-AutoML (BMMA)
 
 - [Introduction](#introduction)
 - [Features](#features)
@@ -12,7 +12,7 @@
 - [Future Improvements](#future-improvements)
 
 ## Introduction
-Brain-AutoML model is capable of scaling to any number of data types such as tabular, sentiment data, time series, and computer vision data. The architecture of Brain-AutoML is centred around the main component, Brain (Facade Design), which manages all internal parts.
+BMMA framework is capable of scaling to multiple modalities such as tabular, sentiment data, time series, and computer vision data. The architecture of BMMA is centred around the main component, Brain (Facade Design), which manages all internal parts.
 
 ### Authors
 <img align="left" width="231.95" height="75" src="https://raw.githubusercontent.com/chandraveshchaudhari/personal-information/initial_setup/images/christ.png">
@@ -38,7 +38,7 @@ The package [Brain-AutoML](https://github.com/chandraveshchaudhari/brain-ai/) is
 This project is available at [PyPI](https://pypi.org/project/brain-automl/). For help in installation check 
 [instructions](https://packaging.python.org/tutorials/installing-packages/#installing-from-pypi)
 ```bash
-python3 -m pip install brain-automl  
+python3 -m pip install brain−multiple−modalities−automl 
 ```
 
 ### Dependencies
@@ -50,6 +50,7 @@ python3 -m pip install brain-automl
 - H2O.ai
 - ML Jar
 - PyCaret
+  Sentiment Analysis models
 - BERT
 - RoBERTa
 
