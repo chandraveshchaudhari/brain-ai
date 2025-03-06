@@ -41,8 +41,7 @@ This project is available at [PyPI](https://pypi.org/project/brain-automl/). For
 python3 -m pip install brain−multiple−modalities−automl 
 ```
 
-### Dependencies
-##### Required
+### Implemented AutoML libraries
 - [AutoGluon](https://auto.gluon.ai/stable/tutorials/tabular/index.html)
 - AutoKeras
 - AutoSklearn
