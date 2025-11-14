@@ -3,3 +3,26 @@ delete this.
 
 
 https://github.com/hibayesian/awesome-automl-papers
+
+---
+
+## Example Notebooks
+
+Multivariate time series forecasting examples are available in `notebooks/`:
+
+- **`notebooks/01_time_series_forecasting.ipynb`** — Comprehensive workflow with GARCH, LSTM, and Transformer models
+  - Data loading and exploration
+  - Preprocessing and normalization
+  - Model training and evaluation
+  - Performance comparison (RMSE, MAE, MAPE, R²)
+  - Residual analysis and insights
+
+### Quick Start
+
+```zsh
+pip install -r docs/requirements-notebook.txt
+cd docs/notebooks
+jupyter lab 01_time_series_forecasting.ipynb
+```
+
+See `notebooks/README.md` for detailed setup and customization options.
