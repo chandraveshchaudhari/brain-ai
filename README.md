@@ -35,11 +35,59 @@ The package [Brain-AutoML](https://github.com/chandraveshchaudhari/brain-ai/) is
 - Provides replicable results
 
 ## Installation 
+
+### From PyPI
 This project is available at [PyPI](https://pypi.org/project/brain-automl/). For help in installation check 
 [instructions](https://packaging.python.org/tutorials/installing-packages/#installing-from-pypi)
 ```bash
 python3 -m pip install brain−multiple−modalities−automl 
 ```
+
+### Development Setup (Local Installation)
+
+For development or running examples locally, follow these steps:
+
+#### Quick Setup (Automated)
+```zsh
+chmod +x setup_environment.sh
+./setup_environment.sh
+```
+
+#### Manual Setup
+```zsh
+# Create virtual environment
+python3 -m venv .venv
+
+# Activate environment
+source .venv/bin/activate  # macOS/Linux
+# OR
+.\.venv\Scripts\Activate   # Windows
+
+# Install dependencies
+pip install --upgrade pip setuptools wheel
+pip install -r requirements.txt
+pip install -r docs/requirements-notebook.txt
+pip install -e .
+```
+
+### Documentation
+- 📖 **Setup Guide**: See [ENVIRONMENT.md](ENVIRONMENT.md) for detailed instructions
+- ⚡ **Quick Start**: See [QUICKSTART.md](QUICKSTART.md) for common commands
+- 📊 **Example Notebook**: See [docs/notebooks/README.md](docs/notebooks/README.md)
+
+### Running Example Notebooks
+
+After setup, run the time series forecasting example:
+
+```zsh
+# Activate environment
+source .venv/bin/activate
+
+# Launch Jupyter
+jupyter lab docs/notebooks/01_time_series_forecasting.ipynb
+```
+
+See [docs/notebooks/README.md](docs/notebooks/README.md) for more details on available examples.
 
 ### Implemented AutoML libraries
 - [AutoGluon](https://auto.gluon.ai/stable/tutorials/tabular/index.html)
