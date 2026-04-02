@@ -4,8 +4,11 @@ from __future__ import annotations
 
 from typing import Any
 
+from autogluon.timeseries import TimeSeriesDataFrame, TimeSeriesPredictor
+
 from brain_automl.core.protocols import BaseLibraryBackend
 from brain_automl.core.registry import BACKEND_REGISTRY
+from brain_automl.model_zoo.time_series_ai.data_preparation import to_autogluon_timeseries_format
 
 
 @BACKEND_REGISTRY.register("autogluon_timeseries")
@@ -24,8 +27,36 @@ class AutoGluonTimeSeriesBackend(BaseLibraryBackend):
             return False
 
     def fit(self, x_train: Any, y_train: Any = None, **kwargs: Any) -> Any:
-        # Placeholder until full trainer wiring is added.
-        return {"backend": self.name, "kwargs": kwargs}
+        prediction_length = int(kwargs.get("prediction_length") or kwargs.get("horizon") or 14)
+        eval_metric = kwargs.get("eval_metric", "MASE")
+        presets = kwargs.get("presets", "fast_training")
+        time_limit = kwargs.get("time_limit", 60)
+        verbosity = kwargs.get("verbosity", 0)
+
+        ag_train = to_autogluon_timeseries_format(
+            x_train,
+            target_column="y",
+            timestamp_column="ds",
+            item_id_column="unique_id",
+        )
+        train_data = TimeSeriesDataFrame.from_data_frame(ag_train)
+        predictor = TimeSeriesPredictor(
+            prediction_length=prediction_length,
+            target="target",
+            eval_metric=eval_metric,
+            verbosity=verbosity,
+        )
+        predictor.fit(train_data, presets=presets, time_limit=time_limit)
+        return {
+            "backend": self.name,
+            "predictor": predictor,
+            "train_data": train_data,
+            "prediction_length": prediction_length,
+        }
 
     def predict(self, model: Any, x_test: Any, **kwargs: Any) -> Any:
-        return {"message": "autogluon_timeseries adapter scaffolded", "model": model}
+        forecast = model["predictor"].predict(model["train_data"])
+        forecast_df = forecast.reset_index()
+        return forecast_df[["item_id", "timestamp", "mean"]].rename(
+            columns={"item_id": "unique_id", "timestamp": "ds", "mean": "prediction"}
+        )

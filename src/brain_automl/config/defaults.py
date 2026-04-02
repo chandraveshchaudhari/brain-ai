@@ -127,6 +127,24 @@ DEFAULT_CONFIG: Dict[str, Any] = {
         "copilot_assisted_mode": "optional",
         "require_manual_review_for_agent_generated_code": True,
     },
+    "planning": {
+        "modality_notebooks": {
+            "enabled_modalities": ["tabular", "text", "time_series", "image", "audio", "multimodal"],
+            "template_naming": "<modality>_template.ipynb",
+            "format": "json_notebook",
+        },
+        "hybrid_models": {
+            "status": "planned",
+            "ensemble_strategy": "weighted statistical + ML + deep learning ensembles",
+            "decomposition_algorithms": ["stl", "wavelet", "emd", "ceemdan"],
+            "roadmap": [
+                "Combine statistical + ML + deep learning models in weighted ensembles.",
+                "Add decomposition-based hybrids: STL, wavelet decomposition, EMD/CEEMDAN where feasible.",
+                "Add residual learning pipelines where deep models learn residuals from decomposition components.",
+                "Track per-model and ensemble metrics with backtesting.",
+            ],
+        },
+    },
     "compat": {
         "enable_legacy_brain_class": True,
         "enable_legacy_model_zoo_paths": True,
