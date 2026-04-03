@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 import pandas as pd
@@ -30,6 +31,9 @@ class FLAMLTimeSeriesBackend(BaseLibraryBackend):
         seasonality = int(kwargs.get("seasonality", 5))
         time_budget = int(kwargs.get("time_budget", 30))
         metric = kwargs.get("metric", "mape")
+        output_dir = kwargs.get("output_dir")
+
+        log_file_name = str(Path(output_dir) / "flaml.log") if output_dir else None
 
         automl = AutoML()
         train_x = x_train[["ds"]].copy()
@@ -41,6 +45,8 @@ class FLAMLTimeSeriesBackend(BaseLibraryBackend):
             period=seasonality,
             time_budget=time_budget,
             metric=metric,
+            verbose=0,
+            log_file_name=log_file_name,
         )
         return {
             "backend": self.name,

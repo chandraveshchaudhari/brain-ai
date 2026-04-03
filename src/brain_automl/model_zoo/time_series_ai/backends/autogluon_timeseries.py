@@ -32,6 +32,7 @@ class AutoGluonTimeSeriesBackend(BaseLibraryBackend):
         presets = kwargs.get("presets", "fast_training")
         time_limit = kwargs.get("time_limit", 60)
         verbosity = kwargs.get("verbosity", 0)
+        output_dir = kwargs.get("output_dir")
 
         ag_train = to_autogluon_timeseries_format(
             x_train,
@@ -40,12 +41,15 @@ class AutoGluonTimeSeriesBackend(BaseLibraryBackend):
             item_id_column="unique_id",
         )
         train_data = TimeSeriesDataFrame.from_data_frame(ag_train)
-        predictor = TimeSeriesPredictor(
+        predictor_kwargs: dict = dict(
             prediction_length=prediction_length,
             target="target",
             eval_metric=eval_metric,
             verbosity=verbosity,
         )
+        if output_dir:
+            predictor_kwargs["path"] = output_dir
+        predictor = TimeSeriesPredictor(**predictor_kwargs)
         predictor.fit(train_data, presets=presets, time_limit=time_limit)
         return {
             "backend": self.name,

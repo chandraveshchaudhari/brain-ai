@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import time
+from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
 
 import pandas as pd
+from tqdm.auto import tqdm
 
 from brain_automl.config import get_default_config
 from brain_automl.core.protocols import BaseModalityExecutor
@@ -21,6 +24,7 @@ from brain_automl.model_zoo.time_series_ai.data_preparation import (
     split_last_horizon,
     to_standard_timeseries_format,
 )
+from brain_automl.utilities.run_logging import setup_run_logger
 
 
 class TimeSeriesAutoML(BaseModalityExecutor):
@@ -112,6 +116,15 @@ class TimeSeriesAutoML(BaseModalityExecutor):
         results, and train/test splits so notebooks can consume the source API
         directly without reimplementing benchmarking logic.
         """
+        # --- Output directory & logger setup -----------------------------------
+        output_dir = Path(
+            self.config.get("output", {}).get("output_dir", "brain_automl_output")
+        ).resolve()
+        output_dir.mkdir(parents=True, exist_ok=True)
+        log_level = self.config.get("logging", {}).get("level", "INFO")
+        logger = setup_run_logger(output_dir, level=log_level)
+
+        # --- Data preparation -------------------------------------------------
         standard_df = to_standard_timeseries_format(
             data,
             target_column=target_column,
@@ -124,13 +137,25 @@ class TimeSeriesAutoML(BaseModalityExecutor):
         train_df, test_df = split_last_horizon(series_df, horizon=horizon)
         selected_backends = self.available_backends(backends)
 
+        logger.info(
+            f"Item: {selected_item} | Freq: {inferred_frequency} | "
+            f"Horizon: {len(test_df)} | Train rows: {len(train_df)} | "
+            f"Backends: {selected_backends}"
+        )
+
         prediction_frame = test_df[["ds", "y"]].rename(columns={"y": "actual"}).copy()
         results: List[ModalityResult] = []
         metric_rows: List[Dict[str, Any]] = []
 
-        for backend_name in selected_backends:
+        # --- Backend loop with progress bar -----------------------------------
+        for backend_name in tqdm(selected_backends, desc="Backends", unit="backend", leave=True):
+            backend_output_dir = str(output_dir / backend_name)
+            Path(backend_output_dir).mkdir(parents=True, exist_ok=True)
+
             backend_cls = BACKEND_REGISTRY.get(backend_name)
             backend = backend_cls()
+            logger.info(f"[START] {backend_name}")
+            t0 = time.perf_counter()
             try:
                 model = backend.fit(
                     train_df,
@@ -140,6 +165,8 @@ class TimeSeriesAutoML(BaseModalityExecutor):
                     horizon=len(test_df),
                     frequency=inferred_frequency,
                     seasonality=seasonality,
+                    output_dir=backend_output_dir,
+                    run_logger=logger,
                     **kwargs,
                 )
                 raw_prediction = backend.predict(
@@ -150,6 +177,8 @@ class TimeSeriesAutoML(BaseModalityExecutor):
                     horizon=len(test_df),
                     frequency=inferred_frequency,
                     seasonality=seasonality,
+                    output_dir=backend_output_dir,
+                    run_logger=logger,
                     **kwargs,
                 )
                 normalized_prediction = normalize_prediction_frame(
@@ -164,6 +193,13 @@ class TimeSeriesAutoML(BaseModalityExecutor):
                     y_pred=normalized_prediction["prediction"],
                     seasonality=seasonality,
                 )
+                elapsed = time.perf_counter() - t0
+                rmse = metrics.get("rmse", float("nan"))
+                mae = metrics.get("mae", float("nan"))
+                logger.info(
+                    f"[ OK ] {backend_name} — {elapsed:.1f}s | "
+                    f"RMSE={rmse:.4f}  MAE={mae:.4f}"
+                )
                 results.append(
                     ModalityResult(
                         modality=self.modality,
@@ -176,11 +212,15 @@ class TimeSeriesAutoML(BaseModalityExecutor):
                             "item_id": selected_item,
                             "frequency": inferred_frequency,
                             "horizon": len(test_df),
+                            "elapsed_seconds": round(elapsed, 2),
                         },
                     )
                 )
                 metric_rows.append({"backend": backend_name, **metrics})
             except Exception as exc:
+                elapsed = time.perf_counter() - t0
+                logger.error(f"[FAIL] {backend_name} — {elapsed:.1f}s | {exc}")
+                logger.debug(f"Full traceback for {backend_name}:", exc_info=True)
                 results.append(
                     ModalityResult(
                         modality=self.modality,
@@ -194,6 +234,7 @@ class TimeSeriesAutoML(BaseModalityExecutor):
                             "frequency": inferred_frequency,
                             "horizon": len(test_df),
                             "error": str(exc),
+                            "elapsed_seconds": round(elapsed, 2),
                         },
                     )
                 )
@@ -206,7 +247,14 @@ class TimeSeriesAutoML(BaseModalityExecutor):
         metrics_df = pd.DataFrame(metric_rows)
         if not metrics_df.empty:
             metrics_df = metrics_df.sort_values("rmse").reset_index(drop=True)
+            best = metrics_df.iloc[0]
+            logger.info(
+                f"Best backend: {best['backend']} | "
+                f"RMSE={best.get('rmse', float('nan')):.4f}  "
+                f"MAE={best.get('mae', float('nan')):.4f}"
+            )
 
+        logger.info("forecast_last_horizon complete")
         return {
             "item_id": selected_item,
             "frequency": inferred_frequency,
@@ -216,4 +264,6 @@ class TimeSeriesAutoML(BaseModalityExecutor):
             "predictions": prediction_frame,
             "metrics": metrics_df,
             "results": results,
+            "output_dir": str(output_dir),
         }
+

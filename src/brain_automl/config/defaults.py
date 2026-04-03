@@ -106,10 +106,14 @@ DEFAULT_CONFIG: Dict[str, Any] = {
         "save_predictions": True,
         "generate_model_cards": True,
     },
+    "output": {
+        "output_dir": "brain_automl_output",
+    },
     "logging": {
         "level": "INFO",
         "json_logs": True,
         "redact_sensitive_fields": True,
+        "file_logging": True,
     },
     "reproducibility": {
         "save_config_snapshot_per_run": True,

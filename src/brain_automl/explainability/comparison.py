@@ -4,15 +4,108 @@ import numpy as np
 import seaborn as sns
 from matplotlib import pyplot as plt
 
-from supervised.utils.additional_metrics import AdditionalMetrics
+try:
+    from supervised.utils.additional_metrics import AdditionalMetrics
+except Exception:
+    AdditionalMetrics = None
 
 from sklearn.metrics import precision_recall_curve, roc_curve, class_likelihood_ratios, det_curve
 from sklearn.metrics import balanced_accuracy_score, cohen_kappa_score, confusion_matrix
 from sklearn.metrics import hinge_loss, matthews_corrcoef, roc_auc_score, top_k_accuracy_score
 from sklearn.metrics import accuracy_score, classification_report, f1_score, fbeta_score
 from sklearn.metrics import hamming_loss, jaccard_score, log_loss, multilabel_confusion_matrix
+from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.metrics import precision_recall_fscore_support, precision_score, recall_score
 from sklearn.metrics import zero_one_loss, average_precision_score
+
+
+FORECAST_LOWER_IS_BETTER = {"mae", "rmse", "mape", "smape", "mase"}
+FORECAST_HIGHER_IS_BETTER = {"r2"}
+
+
+def build_forecast_comparison_table(metrics_df, sort_by="rmse"):
+    """Return a ranked forecast comparison table for notebook display."""
+    if metrics_df is None:
+        return pd.DataFrame()
+
+    table = metrics_df.copy()
+    if table.empty:
+        return table
+
+    preferred_cols = [
+        "backend",
+        "source",
+        "model_name",
+        "mae",
+        "rmse",
+        "mape",
+        "smape",
+        "mase",
+        "r2",
+    ]
+    available_cols = [col for col in preferred_cols if col in table.columns]
+    table = table[available_cols].copy()
+
+    ascending = sort_by in FORECAST_LOWER_IS_BETTER
+    if sort_by in table.columns:
+        table = table.sort_values(sort_by, ascending=ascending).reset_index(drop=True)
+        table.insert(0, "rank", np.arange(1, len(table) + 1))
+    return table
+
+
+def summarize_best_forecast_models(metrics_df):
+    """Return the best model per metric as a compact dataframe."""
+    if metrics_df is None or metrics_df.empty:
+        return pd.DataFrame(columns=["metric", "best_backend", "score", "objective"])
+
+    rows = []
+    for metric in ["rmse", "mae", "mape", "smape", "mase", "r2"]:
+        if metric not in metrics_df.columns:
+            continue
+        valid = metrics_df[["backend", metric]].dropna()
+        if valid.empty:
+            continue
+        if metric in FORECAST_LOWER_IS_BETTER:
+            best_idx = valid[metric].idxmin()
+            objective = "min"
+        else:
+            best_idx = valid[metric].idxmax()
+            objective = "max"
+        rows.append(
+            {
+                "metric": metric,
+                "best_backend": valid.loc[best_idx, "backend"],
+                "score": float(valid.loc[best_idx, metric]),
+                "objective": objective,
+            }
+        )
+    return pd.DataFrame(rows)
+
+
+def plot_forecast_model_comparison(metrics_df, metric="rmse", title=None, ax=None):
+    """Plot a simple horizontal comparison chart for forecast models."""
+    if metrics_df is None or metrics_df.empty:
+        raise ValueError("metrics_df must contain at least one row")
+    if metric not in metrics_df.columns:
+        raise ValueError(f"Metric '{metric}' is not present in metrics_df")
+
+    plot_df = metrics_df[["backend", metric]].dropna().copy()
+    if plot_df.empty:
+        raise ValueError(f"No valid values found for metric '{metric}'")
+
+    ascending = metric in FORECAST_LOWER_IS_BETTER
+    plot_df = plot_df.sort_values(metric, ascending=ascending)
+    if ax is None:
+        _, ax = plt.subplots(figsize=(10, max(3, len(plot_df) * 0.5)))
+
+    sns.barplot(data=plot_df, x=metric, y="backend", orient="h", ax=ax, palette="Blues_r")
+    ax.set_title(title or f"Forecast Model Comparison by {metric.upper()}")
+    ax.set_xlabel(metric.upper())
+    ax.set_ylabel("Model")
+    for container in ax.containers:
+        ax.bar_label(container, fmt="%.4f", padding=4)
+    plt.tight_layout()
+    return ax
 
 
 def calculate_all_classification_metrics(y_true, y_pred, y_scores=None, pos_label=None):
@@ -180,6 +273,8 @@ def convert_metrics_to_record(metrics_dict):
 
 
 def get_additional_metrics(y_true, y_pred):
+    if AdditionalMetrics is None:
+        raise ImportError("Optional dependency 'supervised' is required for get_additional_metrics")
     return AdditionalMetrics().binary_classification(y_true, y_pred)
 
 
