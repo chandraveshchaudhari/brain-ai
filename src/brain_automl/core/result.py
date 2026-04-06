@@ -18,6 +18,7 @@ class ModalityResult:
     metrics: Dict[str, float] = field(default_factory=dict)
     model_path: Optional[str] = None
     metadata: Dict[str, Any] = field(default_factory=dict)
+    fitted_model: Optional[Any] = None  # raw backend model dict (e.g. AutoGluon predictor)
 
 
 @dataclass

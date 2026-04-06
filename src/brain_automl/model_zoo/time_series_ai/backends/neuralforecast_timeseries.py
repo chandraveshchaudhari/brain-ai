@@ -103,7 +103,7 @@ class _HeartbeatLogger:
 
 def _resolve_model_name(raw_model_name: Any) -> str:
     model_name = str(raw_model_name or "MLP").strip().upper()
-    supported = {"MLP", "NBEATS", "NHITS"}
+    supported = {"MLP", "NBEATS", "NHITS", "PATCHTST", "TIDE", "ITRANSFORMER", "TCN"}
     if model_name not in supported:
         raise ValueError(f"Unsupported neuralforecast model '{raw_model_name}'. Supported: {sorted(supported)}")
     return model_name
@@ -131,8 +131,9 @@ def _build_neuralforecast_model(
         "enable_checkpointing": False,
         "log_every_n_steps": 1,
         "callbacks": callbacks,
-        "accelerator": kwargs.get("accelerator", "cpu"),
-        "devices": kwargs.get("devices", 1),
+        # Enforce CPU-only execution for notebook stability on macOS.
+        "accelerator": "cpu",
+        "devices": 1,
         "precision": kwargs.get("precision", "32-true"),
         "num_sanity_val_steps": int(kwargs.get("num_sanity_val_steps", 0)),
         "enable_model_summary": bool(kwargs.get("enable_model_summary", False)),
@@ -149,7 +150,27 @@ def _build_neuralforecast_model(
         )
     if model_name == "NBEATS":
         return NBEATS(**common_kwargs)
-    return NHITS(**common_kwargs)
+    if model_name == "NHITS":
+        return NHITS(**common_kwargs)
+
+    from neuralforecast import models as nf_models
+
+    model_cls = getattr(nf_models, model_name, None)
+    if model_cls is None:
+        raise ValueError(f"NeuralForecast model class '{model_name}' is unavailable in installed version")
+    try:
+        return model_cls(**common_kwargs)
+    except TypeError:
+        # Some models require/accept a subset of arguments depending on version.
+        fallback_kwargs = {
+            "h": prediction_length,
+            "input_size": input_size,
+            "max_steps": max_steps,
+            "enable_progress_bar": True,
+            "logger": csv_logger,
+            "callbacks": callbacks,
+        }
+        return model_cls(**fallback_kwargs)
 
 
 @BACKEND_REGISTRY.register("neuralforecast")
@@ -177,10 +198,20 @@ class NeuralForecastBackend(BaseLibraryBackend):
         val_size = int(kwargs.get("val_size", min(max(8, prediction_length // 6), 32, max_allowed_val_size)))
         output_dir = Path(kwargs.get("output_dir") or self.name)
         run_logger = kwargs.get("run_logger") or logging.getLogger(__name__)
-        os.environ.setdefault("PYTORCH_ENABLE_MPS_FALLBACK", "1")
+        # Hard-disable GPU/MPS paths and keep thread usage conservative.
+        os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+        os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "0"
+        os.environ.setdefault("OMP_NUM_THREADS", "1")
+        os.environ.setdefault("MKL_NUM_THREADS", "1")
+        os.environ.setdefault("NUMEXPR_NUM_THREADS", "1")
+        os.environ.setdefault("VECLIB_MAXIMUM_THREADS", "1")
         output_dir.mkdir(parents=True, exist_ok=True)
         csv_log_dir = output_dir / "lightning_logs"
         fault_log_path = output_dir / "python_fault.log"
+
+        # Force CPU trainer args even if caller passes different values.
+        kwargs["accelerator"] = "cpu"
+        kwargs["devices"] = 1
 
         train_data = to_neuralforecast_format(x_train)
         run_logger.info(
@@ -193,9 +224,20 @@ class NeuralForecastBackend(BaseLibraryBackend):
             input_size,
             val_size,
             max_steps,
-            kwargs.get("accelerator", "cpu"),
-            kwargs.get("devices", 1),
+            "cpu",
+            1,
         )
+
+        try:
+            import torch
+
+            torch.set_num_threads(1)
+            torch.set_num_interop_threads(1)
+            if hasattr(torch, "set_default_device"):
+                torch.set_default_device("cpu")
+            run_logger.info("[neuralforecast] Torch runtime pinned to CPU (threads=1)")
+        except Exception as exc:
+            run_logger.info("[neuralforecast] Torch CPU pinning skipped: %s", exc)
         (output_dir / "run_metadata.json").write_text(
             json.dumps(
                 {

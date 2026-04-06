@@ -27,12 +27,14 @@ def setup_run_logger(
     log_dir = output_dir / "logs"
     log_dir.mkdir(parents=True, exist_ok=True)
 
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
     log_file = log_dir / f"{name}_{timestamp}.log"
 
     # Use a timestamped logger name so re-running a cell doesn't accumulate handlers.
     logger_name = f"{name}.{timestamp}"
     logger = logging.getLogger(logger_name)
+    if logger.handlers:
+        return logger
     logger.setLevel(logging.DEBUG)
     logger.propagate = False
 

@@ -12,6 +12,16 @@ from brain_automl.core import (
 	ModalityResult,
 	PipelineRunner,
 )
+from brain_automl.automl import BrainAutoMLForecast
+from brain_automl.forecasting import (
+	HYBRID_TEMPLATES,
+	HierarchicalForecast,
+	HybridModel,
+	MultimodalForecastEngine,
+	SUPPORTED_HIERARCHICAL_METHODS,
+	list_deep_learning_models,
+	list_foundation_models,
+)
 from brain_automl.legacy_bridge import Brain, LegacyBrainBridge
 from brain_automl.utilities import (
 	build_modality_notebook_template,
@@ -30,8 +40,16 @@ __all__ = [
 	"ModalityResult",
 	"FusionResult",
 	"PipelineRunner",
+	"BrainAutoMLForecast",
 	"Brain",
 	"LegacyBrainBridge",
+	"HybridModel",
+	"HierarchicalForecast",
+	"MultimodalForecastEngine",
+	"HYBRID_TEMPLATES",
+	"SUPPORTED_HIERARCHICAL_METHODS",
+	"list_foundation_models",
+	"list_deep_learning_models",
 	"build_modality_notebook_template",
 	"create_modality_notebooks",
 	"get_decomposition_algorithms",

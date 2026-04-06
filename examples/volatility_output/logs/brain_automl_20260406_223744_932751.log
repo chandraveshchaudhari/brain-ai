@@ -1,0 +1,78 @@
+[22:37:44] INFO     Brain-AI run started
+[22:37:44] INFO     Log file : /Volumes/MacSSD/01_Projects/Chandravesh-ML-Research/projects/core-research/brain-ai/examples/volatility_output/logs/brain_automl_20260406_223744_932751.log
+[22:37:44] INFO     Output dir: /Volumes/MacSSD/01_Projects/Chandravesh-ML-Research/projects/core-research/brain-ai/examples/volatility_output
+[22:37:44] INFO     ============================================================
+[22:37:44] INFO     fit_all_stocks() starting
+[22:37:44] INFO       Data shape  : (18381, 12)
+[22:37:44] INFO       Horizons    : [7, 15, 30]  (max=30)
+[22:37:44] INFO       Target      : Volatility
+[22:37:44] INFO       Item-ID col : 'Stock'
+[22:37:44] INFO     ============================================================
+[22:37:44] INFO     Stocks to process: ['BANKNIFTY', 'HDFCBANK', 'NIFTY50', 'RELIANCE', 'TCS'] (5 total)
+[22:37:44] INFO     
+──────────────────────────────────────────────────
+[22:37:44] INFO     [1/5] Stock: BANKNIFTY
+[22:37:45] INFO     Item: BANKNIFTY | Freq: B | Horizon: 30 | Train rows: 3862 | Backends: ['autogluon_timeseries', 'statsforecast', 'flaml']
+[22:37:45] INFO     [START] autogluon_timeseries
+[22:38:23] INFO     [ OK ] autogluon_timeseries — 38.4s | RMSE=0.0001  MAE=0.0001
+[22:38:23] INFO     [START] statsforecast
+[22:38:46] INFO     [ OK ] statsforecast — 22.9s | RMSE=0.0001  MAE=0.0001
+[22:38:46] INFO     [START] flaml
+[22:39:33] INFO     [ OK ] flaml — 47.2s | RMSE=0.0001  MAE=0.0001
+[22:39:33] INFO     Best backend: autogluon_timeseries | RMSE=0.0001  MAE=0.0001
+[22:39:33] INFO     forecast_last_horizon complete
+[22:39:33] INFO     Saved per-stock predictions to: /Volumes/MacSSD/01_Projects/Chandravesh-ML-Research/projects/core-research/brain-ai/examples/volatility_output/predictions/BANKNIFTY_predictions_h30.csv
+[22:48:36] INFO     
+──────────────────────────────────────────────────
+[22:48:36] INFO     [2/5] Stock: HDFCBANK
+[22:48:36] INFO     Item: HDFCBANK | Freq: B | Horizon: 30 | Train rows: 3862 | Backends: ['autogluon_timeseries', 'statsforecast', 'flaml']
+[22:48:36] INFO     [START] autogluon_timeseries
+[22:49:04] INFO     [ OK ] autogluon_timeseries — 27.8s | RMSE=0.0001  MAE=0.0001
+[22:49:04] INFO     [START] statsforecast
+[22:49:22] INFO     [ OK ] statsforecast — 18.7s | RMSE=0.0001  MAE=0.0001
+[22:49:22] INFO     [START] flaml
+[22:50:18] INFO     [ OK ] flaml — 56.0s | RMSE=0.0002  MAE=0.0002
+[22:50:18] INFO     Best backend: statsforecast | RMSE=0.0001  MAE=0.0001
+[22:50:18] INFO     forecast_last_horizon complete
+[22:50:18] INFO     Saved per-stock predictions to: /Volumes/MacSSD/01_Projects/Chandravesh-ML-Research/projects/core-research/brain-ai/examples/volatility_output/predictions/HDFCBANK_predictions_h30.csv
+[23:22:42] INFO     
+──────────────────────────────────────────────────
+[23:22:42] INFO     [3/5] Stock: NIFTY50
+[23:22:42] INFO     Item: NIFTY50 | Freq: B | Horizon: 30 | Train rows: 3862 | Backends: ['autogluon_timeseries', 'statsforecast', 'flaml']
+[23:22:42] INFO     [START] autogluon_timeseries
+[23:23:09] INFO     [ OK ] autogluon_timeseries — 27.3s | RMSE=0.0001  MAE=0.0001
+[23:23:09] INFO     [START] statsforecast
+[23:23:25] INFO     [ OK ] statsforecast — 15.6s | RMSE=0.0001  MAE=0.0001
+[23:23:25] INFO     [START] flaml
+[23:24:11] INFO     [ OK ] flaml — 46.4s | RMSE=0.0001  MAE=0.0001
+[23:24:11] INFO     Best backend: flaml | RMSE=0.0001  MAE=0.0001
+[23:24:11] INFO     forecast_last_horizon complete
+[23:24:11] INFO     Saved per-stock predictions to: /Volumes/MacSSD/01_Projects/Chandravesh-ML-Research/projects/core-research/brain-ai/examples/volatility_output/predictions/NIFTY50_predictions_h30.csv
+[23:34:40] INFO     
+──────────────────────────────────────────────────
+[23:34:40] INFO     [4/5] Stock: RELIANCE
+[23:34:40] INFO     Item: RELIANCE | Freq: B | Horizon: 30 | Train rows: 3862 | Backends: ['autogluon_timeseries', 'statsforecast', 'flaml']
+[23:34:40] INFO     [START] autogluon_timeseries
+[23:35:06] INFO     [ OK ] autogluon_timeseries — 26.8s | RMSE=0.0002  MAE=0.0002
+[23:35:06] INFO     [START] statsforecast
+[23:35:35] INFO     [ OK ] statsforecast — 29.0s | RMSE=0.0002  MAE=0.0001
+[23:35:35] INFO     [START] flaml
+[23:36:07] INFO     [ OK ] flaml — 32.0s | RMSE=0.0002  MAE=0.0002
+[23:36:07] INFO     Best backend: statsforecast | RMSE=0.0002  MAE=0.0001
+[23:36:07] INFO     forecast_last_horizon complete
+[23:36:07] INFO     Saved per-stock predictions to: /Volumes/MacSSD/01_Projects/Chandravesh-ML-Research/projects/core-research/brain-ai/examples/volatility_output/predictions/RELIANCE_predictions_h30.csv
+[23:46:48] INFO     
+──────────────────────────────────────────────────
+[23:46:48] INFO     [5/5] Stock: TCS
+[23:46:48] INFO     Item: TCS | Freq: B | Horizon: 30 | Train rows: 3862 | Backends: ['autogluon_timeseries', 'statsforecast', 'flaml']
+[23:46:48] INFO     [START] autogluon_timeseries
+[23:47:12] INFO     [ OK ] autogluon_timeseries — 23.2s | RMSE=0.0004  MAE=0.0002
+[23:47:12] INFO     [START] statsforecast
+[23:47:18] INFO     [ OK ] statsforecast — 6.8s | RMSE=0.0003  MAE=0.0002
+[23:47:18] INFO     [START] flaml
+[23:48:02] INFO     [ OK ] flaml — 43.6s | RMSE=0.0003  MAE=0.0002
+[23:48:02] INFO     Best backend: statsforecast | RMSE=0.0003  MAE=0.0002
+[23:48:02] INFO     forecast_last_horizon complete
+[23:48:02] INFO     Saved per-stock predictions to: /Volumes/MacSSD/01_Projects/Chandravesh-ML-Research/projects/core-research/brain-ai/examples/volatility_output/predictions/TCS_predictions_h30.csv
+[23:57:45] INFO     
+fit_all_stocks() complete — 285 leaderboard rows across 5 stocks

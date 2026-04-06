@@ -33,6 +33,7 @@ class AutoGluonTimeSeriesBackend(BaseLibraryBackend):
         time_limit = kwargs.get("time_limit", 60)
         verbosity = kwargs.get("verbosity", 0)
         output_dir = kwargs.get("output_dir")
+        enable_ensemble = kwargs.get("enable_ensemble", True)
 
         ag_train = to_autogluon_timeseries_format(
             x_train,
@@ -50,7 +51,15 @@ class AutoGluonTimeSeriesBackend(BaseLibraryBackend):
         if output_dir:
             predictor_kwargs["path"] = output_dir
         predictor = TimeSeriesPredictor(**predictor_kwargs)
-        predictor.fit(train_data, presets=presets, time_limit=time_limit)
+        
+        # Prepare fit kwargs
+        fit_kwargs = {"presets": presets, "time_limit": time_limit}
+        
+        # Optionally exclude ensemble models to avoid WeightedEnsemble errors
+        if not enable_ensemble:
+            fit_kwargs["excluded_model_types"] = ["Ensemble"]
+        
+        predictor.fit(train_data, **fit_kwargs)
         return {
             "backend": self.name,
             "predictor": predictor,
@@ -59,8 +68,34 @@ class AutoGluonTimeSeriesBackend(BaseLibraryBackend):
         }
 
     def predict(self, model: Any, x_test: Any, **kwargs: Any) -> Any:
-        forecast = model["predictor"].predict(model["train_data"])
-        forecast_df = forecast.reset_index()
-        return forecast_df[["item_id", "timestamp", "mean"]].rename(
-            columns={"item_id": "unique_id", "timestamp": "ds", "mean": "prediction"}
-        )
+        predictor = model["predictor"]
+        train_data = model["train_data"]
+        try:
+            forecast = predictor.predict(train_data)
+            forecast_df = forecast.reset_index()
+            return forecast_df[["item_id", "timestamp", "mean"]].rename(
+                columns={"item_id": "unique_id", "timestamp": "ds", "mean": "prediction"}
+            )
+        except ValueError as e:
+            # Handle WeightedEnsemble errors by falling back to best model
+            if "WeightedEnsemble" in str(e):
+                # Get the best non-ensemble model from leaderboard order.
+                leaderboard = predictor.leaderboard(train_data, silent=True)
+                model_candidates = leaderboard["model"].tolist() if "model" in leaderboard.columns else leaderboard.index.tolist()
+                best_model = next(
+                    (
+                        str(model_name)
+                        for model_name in model_candidates
+                        if "WeightedEnsemble" not in str(model_name)
+                    ),
+                    None,
+                )
+
+                if best_model:
+                    # Predict using the best available model
+                    forecast = predictor.predict(train_data, model=best_model)
+                    forecast_df = forecast.reset_index()
+                    return forecast_df[["item_id", "timestamp", "mean"]].rename(
+                        columns={"item_id": "unique_id", "timestamp": "ds", "mean": "prediction"}
+                    )
+            raise

@@ -120,6 +120,8 @@ setuptools.setup(
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11',
     ],
 
     # This field adds keywords for your project which will appear on the
@@ -150,7 +152,7 @@ setuptools.setup(
     # 'Programming Language' classifiers above, 'pip install' will check this
     # and refuse to install the project if the version does not match. See
     # https://packaging.python.org/guides/distributing-packages-using-setuptools/#python-requires
-    python_requires='>=3.6, <4',
+    python_requires='>=3.10, <3.12',
 
     # This field lists other packages that your project depends on to run.
     # Any package you put here will be installed by pip when your project is
@@ -220,6 +222,17 @@ setuptools.setup(
     # "xlrd==2.0.1"]
 
 
+    install_requires=[
+        "numpy>=1.24,<2.0",
+        "pandas>=2.0,<2.3",
+        "scipy>=1.10,<1.14",
+        "scikit-learn>=1.3,<1.6",
+        "statsmodels>=0.14,<0.15",
+        "tqdm>=4.66,<5",
+        "plotly>=5.20,<6",
+        "matplotlib>=3.8,<3.10",
+    ],
+
     # List additional groups of dependencies here (e.g. development
     # dependencies). Users will be able to install these using the "extras"
     # syntax, for example:
@@ -228,10 +241,32 @@ setuptools.setup(
     #
     # Similar to `install_requires` above, these must be valid existing
     # projects.
-    # extras_require={  # Optional
-    #    'dev': ['check-manifest'],
-    #    'test': ['coverage'],
-    # },
+    extras_require={  # Optional
+        'forecasting': [
+            "autogluon.timeseries>=1.2,<1.5",
+            "statsforecast>=1.7,<2.0",
+            "flaml>=2.1,<3.0",
+            "neuralforecast>=1.7,<2.0",
+            "prophet>=1.1,<2.0",
+        ],
+        'foundation': [
+            "transformers>=4.40,<5",
+            "torch>=2.2,<2.6",
+            "accelerate>=0.30,<1.0",
+            "datasets>=2.19,<3.0",
+            "gluonts>=0.14,<0.16",
+            "timesfm>=1.2,<2.0",
+        ],
+        'legacy': [
+            "xgboost>=2.0,<3.0",
+            "tensorflow>=2.15,<2.17",
+            "h2o>=3.46,<4",
+            "mlflow>=2.12,<3.0",
+        ],
+        'dev': [
+            "pytest>=8.0,<9.0",
+        ],
+    },
 
     # If there are data files included in your packages that need to be
     # installed, specify them here.

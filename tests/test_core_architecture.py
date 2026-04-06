@@ -35,6 +35,11 @@ class TestConfig:
         assert DEFAULT_CONFIG["profile"] == "privacy_first"
         assert cfg2["profile"] == "privacy_first"
 
+    def test_time_series_optional_backends_include_chronos(self):
+        """Chronos is exposed as an optional time-series backend."""
+        optional = DEFAULT_CONFIG["backends"]["by_modality"]["time_series"]["optional"]
+        assert "chronos" in optional
+
 
 class TestRegistry:
     """Backend and tool registries."""

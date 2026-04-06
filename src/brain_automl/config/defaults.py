@@ -58,8 +58,8 @@ DEFAULT_CONFIG: Dict[str, Any] = {
                 "default": ["huggingface", "finbert", "roberta"],
             },
             "time_series": {
-                "default": ["autogluon_timeseries", "statsforecast", "neuralforecast", "flaml"],
-                "optional": ["pycaret_timeseries", "h2o_timeseries", "optuna_tuner"],
+                "default": ["autogluon_timeseries", "statsforecast", "flaml"],
+                "optional": ["pycaret_timeseries", "h2o_timeseries", "optuna_tuner", "chronos"],
             },
             "image": {
                 "default": ["huggingface_vision"],

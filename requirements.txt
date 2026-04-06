@@ -1,0 +1,35 @@
+# Core dependencies for brain_automl on Python 3.10
+numpy
+pandas
+scipy
+scikit-learn
+statsmodels
+tqdm
+plotly
+matplotlib
+nbformat
+ipywidgets
+ipykernel
+
+# Forecasting backends and model tooling
+autogluon
+statsforecast
+flaml
+prophet
+
+# Foundation and transformer-based forecasting
+transformers
+torch
+accelerate
+datasets
+gluonts
+timesfm
+
+# Legacy/optional modules used by older paths
+xgboost
+tensorflow
+h2o
+mlflow
+
+# Testing utilities
+pytest

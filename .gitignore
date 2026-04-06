@@ -1,6 +1,3 @@
-# Brain-AI generated outputs
-examples/brain_automl_output/
-
 # Python
 __pycache__/
 *.py[cod]
