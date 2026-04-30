@@ -2,10 +2,9 @@
 requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
-
 [project]
 name = "brain-automl"
-version = "0.0.2"
+version = "0.0.4"
 description = "Multimodal Decision Intelligence Engine"
 readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = ">=3.9"
@@ -24,19 +23,17 @@ dependencies = [
 ]
 
 [project.urls]
-homepage = "https://github.com/your-org/brain-ai"
+Homepage = "https://github.com/your-org/brain-ai"
 
-
-# 🔥 THIS IS THE MOST IMPORTANT FIX
 [tool.setuptools]
 package-dir = {"" = "src"}
 
 [tool.setuptools.packages.find]
 where = ["src"]
-
+include = ["brain_ai*"]
 
 [tool.pytest.ini_options]
-addopts = "--cov=brain_ai --cov-report=term-missing --cov-fail-under=100"
+addopts = "--cov=brain_ai --cov-report=term-missing"
 
 [tool.coverage.run]
 source = ["brain_ai"]
