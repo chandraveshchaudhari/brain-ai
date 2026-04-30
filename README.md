@@ -1,6 +1,6 @@
 
 <div align="center">
-  <img src="https://raw.githubusercontent.com/chandraveshchaudhari/personal-information/initial_setup/logos/my%20github%20logo%20template-Brain-AutoML.drawio.png" width="640" height="320">
+  <img src="https://raw.githubusercontent.com/chandraveshchaudhari/chandraveshchaudhari/refs/heads/initial_setup/data/logo.png">
 </div>
 
 # Brain-Multiple-Modalities-AutoML (BMMA)
