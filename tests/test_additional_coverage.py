@@ -3,34 +3,34 @@ import importlib
 import numpy as np
 import pytest
 
-from src.brain_ai.agents.planner import Planner
-from src.brain_ai.agents.skills.compare_models import compare_models
-from src.brain_ai.agents.skills.generate_pipeline import generate_pipeline
-from src.brain_ai.agents.skills.run_experiment import run_experiment
-from src.brain_ai.agents.skills.visualize_dag import visualize_dag
-from src.brain_ai.core.brain import Brain
-from src.brain_ai.dag.builder import DAGBuilder
-from src.brain_ai.decision.engine import DecisionEngine
-from src.brain_ai.decision.spec import PipelineSpec
-from src.brain_ai.experiments.evaluator import Evaluator
-from src.brain_ai.experiments.leaderboard import Leaderboard
-from src.brain_ai.fusion.base import BaseFusion
-from src.brain_ai.fusion.intermediate import IntermediateFusion
-from src.brain_ai.granularity.base import BaseGranularity
-from src.brain_ai.granularity.pooling import PoolingGranularity
-from src.brain_ai.granularity.resample import ResampleGranularity
-from src.brain_ai.models.adapters.autogluon import AutoGluonAdapter
-from src.brain_ai.models.adapters.tpot import TPOTAdapter
-from src.brain_ai.models.base import BaseModelAdapter
-from src.brain_ai.rl.action import Action
-from src.brain_ai.rl.config import DEFAULT
-from src.brain_ai.rl.environment import Environment
-from src.brain_ai.rl.policy import RandomPolicy
-from src.brain_ai.rl.reward import RewardConfig, RewardFunction, compute_reward
-from src.brain_ai.rl.state import State
-from src.brain_ai.rl.trainer import Trainer
-from src.brain_ai.utils import ensure_list
-from src.brain_ai.utils.datasets import generate_multimodal_regression_data
+from brain_ai.agents.planner import Planner
+from brain_ai.agents.skills.compare_models import compare_models
+from brain_ai.agents.skills.generate_pipeline import generate_pipeline
+from brain_ai.agents.skills.run_experiment import run_experiment
+from brain_ai.agents.skills.visualize_dag import visualize_dag
+from brain_ai.core.brain import Brain
+from brain_ai.dag.builder import DAGBuilder
+from brain_ai.decision.engine import DecisionEngine
+from brain_ai.decision.spec import PipelineSpec
+from brain_ai.experiments.evaluator import Evaluator
+from brain_ai.experiments.leaderboard import Leaderboard
+from brain_ai.fusion.base import BaseFusion
+from brain_ai.fusion.intermediate import IntermediateFusion
+from brain_ai.granularity.base import BaseGranularity
+from brain_ai.granularity.pooling import PoolingGranularity
+from brain_ai.granularity.resample import ResampleGranularity
+from brain_ai.models.adapters.autogluon import AutoGluonAdapter
+from brain_ai.models.adapters.tpot import TPOTAdapter
+from brain_ai.models.base import BaseModelAdapter
+from brain_ai.rl.action import Action
+from brain_ai.rl.config import DEFAULT
+from brain_ai.rl.environment import Environment
+from brain_ai.rl.policy import RandomPolicy
+from brain_ai.rl.reward import RewardConfig, RewardFunction, compute_reward
+from brain_ai.rl.state import State
+from brain_ai.rl.trainer import Trainer
+from brain_ai.utils import ensure_list
+from brain_ai.utils.datasets import generate_multimodal_regression_data
 
 
 def test_planner_and_skills_structured_outputs(tmp_path):

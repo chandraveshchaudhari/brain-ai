@@ -7,12 +7,12 @@ from pprint import pprint
 
 import numpy as np
 
-from src.brain_ai.decision.spec import PipelineSpec
-from src.brain_ai.core.brain import Brain
-from src.brain_ai.granularity.resample import ResampleGranularity
-from src.brain_ai.fusion.early import EarlyFusion
-from src.brain_ai.models.adapters.sklearn import SKLearnAdapter
-from src.brain_ai.dag.builder import DAGBuilder
+from brain_ai.decision.spec import PipelineSpec
+from brain_ai.core.brain import Brain
+from brain_ai.granularity.resample import ResampleGranularity
+from brain_ai.fusion.early import EarlyFusion
+from brain_ai.models.adapters.sklearn import SKLearnAdapter
+from brain_ai.dag.builder import DAGBuilder
 
 from sklearn.datasets import load_diabetes
 from sklearn.ensemble import RandomForestRegressor
