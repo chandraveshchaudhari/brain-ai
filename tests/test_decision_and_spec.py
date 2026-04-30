@@ -1,7 +1,7 @@
 import json
 
-from brain_ai.decision.engine import DecisionEngine, generate_pipeline_combinations
-from brain_ai.decision.spec import PipelineSpec
+from src.brain_ai.decision.engine import DecisionEngine, generate_pipeline_combinations
+from src.brain_ai.decision.spec import PipelineSpec
 
 
 def test_pipeline_spec_roundtrip_and_serialization():

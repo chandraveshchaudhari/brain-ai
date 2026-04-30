@@ -9,6 +9,11 @@ version = "0.0.2"
 description = "Multimodal Decision Intelligence Engine"
 readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = ">=3.9"
+
+authors = [
+  { name = "Dr. Chandravesh Chaudhari" }
+]
+
 dependencies = [
   "numpy>=1.23",
   "pandas>=1.5",
@@ -18,11 +23,17 @@ dependencies = [
   "mlflow>=2.0",
 ]
 
-[tool.setuptools.packages.find]
-where = [".", "brain_ai"]
-
 [project.urls]
 homepage = "https://github.com/your-org/brain-ai"
+
+
+# 🔥 THIS IS THE MOST IMPORTANT FIX
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
 
 [tool.pytest.ini_options]
 addopts = "--cov=brain_ai --cov-report=term-missing --cov-fail-under=100"

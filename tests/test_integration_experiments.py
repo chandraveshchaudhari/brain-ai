@@ -1,9 +1,9 @@
-from brain_ai.core.brain import Brain
-from brain_ai.decision.engine import DecisionEngine, generate_pipeline_combinations
-from brain_ai.experiments.evaluator import Evaluator
-from brain_ai.experiments.runner import Runner
-from brain_ai.agents.executor import Executor
-from brain_ai.utils.datasets import generate_multimodal_regression_data
+from src.brain_ai.core.brain import Brain
+from src.brain_ai.decision.engine import DecisionEngine, generate_pipeline_combinations
+from src.brain_ai.experiments.evaluator import Evaluator
+from src.brain_ai.experiments.runner import Runner
+from src.brain_ai.agents.executor import Executor
+from src.brain_ai.utils.datasets import generate_multimodal_regression_data
 
 
 def test_pipeline_combinations_run_without_error():

@@ -2,14 +2,14 @@ import numpy as np
 
 from sklearn.linear_model import LinearRegression
 
-from brain_ai.core.brain import Brain
-from brain_ai.dag.builder import DAGBuilder
-from brain_ai.decision.engine import DecisionEngine
-from brain_ai.decision.spec import PipelineSpec
-from brain_ai.experiments.evaluator import Evaluator
-from brain_ai.fusion.early import EarlyFusion
-from brain_ai.models.adapters.sklearn import SKLearnAdapter
-from brain_ai.utils.datasets import generate_multimodal_regression_data
+from src.brain_ai.core.brain import Brain
+from src.brain_ai.dag.builder import DAGBuilder
+from src.brain_ai.decision.engine import DecisionEngine
+from src.brain_ai.decision.spec import PipelineSpec
+from src.brain_ai.experiments.evaluator import Evaluator
+from src.brain_ai.fusion.early import EarlyFusion
+from src.brain_ai.models.adapters.sklearn import SKLearnAdapter
+from src.brain_ai.utils.datasets import generate_multimodal_regression_data
 
 
 def _run_with_spec(spec: PipelineSpec):
