@@ -1,4 +1,25 @@
 # Python
+__pycache__
+*.py[cod]
+
+# Packaging
+build/
+dist/
+*.egg-info/
+
+# Environments
+.env
+.venv
+
+# Jupyter
+.ipynb_checkpoints/
+
+# MLflow
+mlruns/
+
+# macOS
+.DS_Store
+# Python
 __pycache__/
 *.py[cod]
 *.pyo
@@ -23,4 +44,5 @@ env/
 .vscode/
 
 # OS
+.DS_Store
 .DS_Store
