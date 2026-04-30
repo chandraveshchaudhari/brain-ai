@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+
+[project]
+name = "brain-automl"
+version = "0.0.2"
+description = "Multimodal Decision Intelligence Engine"
+readme = { file = "README.md", content-type = "text/markdown" }
+requires-python = ">=3.9"
+dependencies = [
+  "numpy>=1.23",
+  "pandas>=1.5",
+  "scikit-learn>=1.1",
+  "networkx>=2.8",
+  "matplotlib>=3.5",
+  "mlflow>=2.0",
+]
+
+[tool.setuptools.packages.find]
+where = [".", "brain_ai"]
+
+[project.urls]
+homepage = "https://github.com/your-org/brain-ai"
+
+[tool.pytest.ini_options]
+addopts = "--cov=brain_ai --cov-report=term-missing --cov-fail-under=100"
+
+[tool.coverage.run]
+source = ["brain_ai"]
