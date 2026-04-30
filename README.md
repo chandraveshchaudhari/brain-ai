@@ -14,26 +14,6 @@
 ## Introduction
 BMMA framework is capable of scaling to multiple modalities such as tabular, sentiment data, time series, and computer vision data. The architecture of BMMA is centred around the main component, Brain (Facade Design), which manages all internal parts.
 
-### Authors
-<img align="left" width="231.95" height="75" src="https://raw.githubusercontent.com/chandraveshchaudhari/personal-information/initial_setup/images/christ.png">
-
-The package [Brain-AutoML](https://github.com/chandraveshchaudhari/brain-ai/) is part of thesis created by [Chandravesh chaudhari][chandravesh linkedin], Doctoral candidate at [CHRIST (Deemed to be University), Bangalore, India][christ university website] under the supervision of [Dr. Geetanjali purswani][geetanjali linkedin].
-
-<br/>
-
-[chandravesh linkedin]: https://www.linkedin.com/in/chandravesh-chaudhari "chandravesh linkedin profile"
-[geetanjali linkedin]: https://www.linkedin.com/in/dr-geetanjali-purswani-546336b8 "geetanjali linkedin profile"
-[christ university website]: https://christuniversity.in/ "website"
-
-## Features
-- Highly customisable
-- provide separate Json for customisation
-
-#### Significance
-- Saves time
-- Automate monotonous tasks
-- Provides replicable results
-
 ## Installation 
 
 ### From PyPI
