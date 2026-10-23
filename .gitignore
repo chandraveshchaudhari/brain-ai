@@ -46,3 +46,8 @@ env/
 # OS
 .DS_Store
 .DS_Store
+
+# Test-gate artifacts
+.coverage
+mlflow.db
+mlruns/
