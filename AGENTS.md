@@ -22,6 +22,7 @@ Requirements: [PRODUCT.md](PRODUCT.md). Verification gate: `bash scripts/test.sh
 - **Never invent facts** in docs, marketing or store listings; claim only what exists.
 - **Git:** commit only when asked; never force-push, rewrite history or delete branches (archive instead). The Supervisor merges verified work to the default branch.
 - **Secrets:** `.env` files and keys stay out of git.
+- **Test-user data:** the developers' own data (test users) lives in the private ExoMind repo (`exomind/testdata/users/<person>/`). Never commit it to this repo, bundle it into an app, or ship it in a build, store upload or deployment (policy: `exomind/testdata/README.md`).
 - **Storage:** virtualenvs, caches, models and build output stay inside this repo on the external SSD (`/Volumes/MacSSD`); the internal disk is nearly full.
 - **Cost:** Claude/OpenAI models only through the owner's Claude Code / Codex subscriptions, never per-token via OpenRouter.
 - Workspace rules: `/Volumes/MacSSD/01_Projects/SolarpunkWorks/CLAUDE.md` and `workspace.yaml`.
