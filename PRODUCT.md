@@ -1,28 +1,42 @@
 # Brain-AI (brain-automl): product requirements
 
-Owner: Chandravesh Chaudhari (SolarpunkWorks Pvt Ltd). Status: **draft 2026-10-23, written
-by Claude from the repository's own docs; items marked _(proposed)_ need the owner's
-confirmation.** This file states *what* the product must do; the Supervisor plans *how*.
-Release order: LitSynth → Root → the rest; development may run in parallel.
+Owner: Chandravesh Chaudhari (SolarpunkWorks Pvt Ltd). Updated 2026-10-26.
+
+**What this file contains:** only features that already exist, verified in the code on
+2026-10-26. New features are added here by the owner when he decides on them; the
+Supervisor plans from this file and new app versions are released from it.
+
+**Current goal (owner, 2026-10-26):** release what exists in working condition. That means
+fixing what is broken, hardening security and making it faster. No new features until the
+owner adds them below.
 
 ## Product in one line
 
-An open-source engine that decides and executes multimodal ML pipelines
-(`PipelineSpec = modalities, granularity, fusion, model backend, hyperparameters`).
+An open-source engine that decides and executes multimodal ML pipelines: PipelineSpec = modalities, granularity, fusion, model backend and hyperparameters.
 
-## Who it is for
+## Implemented features
 
-ML researchers and practitioners with multimodal data (tabular, time series, text).
-It also serves as a portfolio piece for the owner's job search.
+1. **Pipeline decisions**: a PipelineSpec decision engine. (`src/brain_ai/decision`)
+2. **Granularity alignment**: resample, pooling and attention strategies. (`src/brain_ai/granularity`)
+3. **Fusion strategies**: early, intermediate and late fusion. (`src/brain_ai/fusion`)
+4. **Model backends** through adapters. (`src/brain_ai/models`)
+5. **Experiment DAG**: build and visualise experiment DAGs. (`src/brain_ai/dag`)
+6. **Experiments**: runner, evaluator and leaderboard. (`src/brain_ai/experiments`)
+7. **Reinforcement-learning search**: environment, state, action, reward, policy and trainer. (`src/brain_ai/rl`)
+8. **Agents**: planner and executor with skills. (`src/brain_ai/agents`)
+9. **Package**: published on PyPI as `brain-automl` (v0.0.7), with example notebooks in `examples/`.
 
-## Must-have outcomes _(proposed)_
+## Release work: fix, secure, speed up
 
-1. `pip install brain-automl` installs cleanly on Python 3.10–3.12 and the README quick-start runs as written.
-2. The example notebooks in `examples/` run end to end on bundled or downloadable data.
-3. The test suite passes and covers the fusion strategies and adapters.
-4. Docs explain `PipelineSpec` and show one complete multimodal example.
+Each item is checkable. Fixing them is in scope now; adding features is not.
 
-## Open decisions for the owner
+### Fix (current state)
+- **Failing tests:** 6 tests in `tests/test_pipeline_behaviors.py` fail (e.g. granularity strategies, user-override components). Make them pass without weakening them.
+- **README quick start:** runs as written on Python 3.10–3.12.
+- **Gate green:** `bash scripts/test.sh` passes.
 
-1. Keep as a portfolio/research project, or grow it into a product?
-2. Next PyPI release: when, and with which changes?
+### Security
+- No private data, keys or unpublished research results in this public repository.
+
+### Speed
+- The test suite runs in under 60 s (47 s today); the README example completes in under 30 s on the Mac.
